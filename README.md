@@ -47,18 +47,18 @@ build-artik/
 ```
 mkdir artik5
 cd artik5
-git clone https://github.com/SamsungARTIK/linux-artik.git -b release/artik520/artik_os_1.0.0
-git clone https://github.com/SamsungARTIK/u-boot-artik.git -b release/artik520/artik_os_1.0.0
-git clone https://github.com/SamsungARTIK/build-artik.git -b release/artik520/artik_os_1.0.0
+git clone https://github.com/SamsungARTIK/linux-artik.git -b release/artik520/artik_os_1.1.0
+git clone https://github.com/SamsungARTIK/u-boot-artik.git -b release/artik520/artik_os_1.1.0
+git clone https://github.com/SamsungARTIK/build-artik.git -b release/artik520/artik_os_1.1.0
 cd build-artik
 ```
 + artik10>
 ```
 mkdir artik10
 cd artik10
-git clone https://github.com/SamsungARTIK/linux-artik.git -b release/artik1020/artik_os_1.0.0
-git clone https://github.com/SamsungARTIK/u-boot-artik.git -b release/artik1020/artik_os_1.0.0
-git clone https://github.com/SamsungARTIK/build-artik.git -b release/artik1020/artik_os_1.0.0
+git clone https://github.com/SamsungARTIK/linux-artik.git -b release/artik1020/artik_os_1.1.0
+git clone https://github.com/SamsungARTIK/u-boot-artik.git -b release/artik1020/artik_os_1.1.0
+git clone https://github.com/SamsungARTIK/build-artik.git -b release/artik1020/artik_os_1.1.0
 cd build-artik
 ```
 

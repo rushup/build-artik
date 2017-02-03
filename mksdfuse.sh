@@ -39,6 +39,23 @@ die() {
 	exit 1
 }
 
+check_exist() {
+	local filename=$1
+	local i=0
+
+	while [ ! -e $filename ]
+	do
+		if [ $i -ge 100 ]
+		then
+			echo "$filename is not exist. Please check the result of kpartx"
+			exit -1
+		fi
+
+		sleep 0.1
+		let i=i+1
+	done
+}
+
 trap 'error ${LINENO} ${?}' ERR
 parse_options "$@"
 
@@ -133,6 +150,8 @@ install_output()
 
 	sudo su -c "dd conv=notrunc if=$TARGET_DIR/modules.img of=$IMG_NAME \
 		bs=1M seek=$MODULE_START_OFFSET count=$MODULE_SIZE"
+
+	check_exist /dev/mapper/${LOOP_DEV2}
 
 	sudo su -c "mkfs.ext4 -F -b 4096 -L rootfs /dev/mapper/${LOOP_DEV2}"
 

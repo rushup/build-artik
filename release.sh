@@ -9,6 +9,9 @@ VBOOT_KEYDIR=
 VBOOT_ITS=
 SKIP_CLEAN=
 SKIP_FEDORA_BUILD=
+BUILD_CONF=
+PREBUILT_VBOOT_DIR=
+DEPLOY=false
 
 print_usage()
 {
@@ -18,13 +21,17 @@ print_usage()
 	echo "-d/--date		Release date: -d 20150911.112204"
 	echo "-m/--microsd	Make a microsd bootable image"
 	echo "-u/--url		Specify an url for downloading rootfs"
+	echo "-C		fed-artik-build configuration file"
 	echo "--full-build	Full build with generating fedora rootfs"
 	echo "--local-rootfs	Copy fedora rootfs from local file instead of downloading"
 	echo "--vboot		Generated verified boot image"
 	echo "--vboot-keydir	Specify key directoy for verified boot"
 	echo "--vboot-its	Specify its file for verified boot"
+	echo "--sboot		Generated signed boot image"
 	echo "--skip-clean	Skip fedora local repository clean"
 	echo "--skip-fedora-build	Skip fedora build"
+	echo "--prebuilt-vboot	Specify prebuilt directory path for vboot"
+	echo "--deploy-all	Deploy release"
 	exit 0
 }
 
@@ -60,6 +67,9 @@ parse_options()
 			-u|--url)
 				SERVER_URL="-s $2"
 				shift ;;
+			-C)
+				BUILD_CONF="-C $2"
+				shift ;;
 			--full-build)
 				FULL_BUILD=true
 				shift ;;
@@ -84,6 +94,12 @@ parse_options()
 			--skip-fedora-build)
 				SKIP_FEDORA_BUILD=--skip-build
 				shift ;;
+			--prebuilt-vboot)
+				PREBUILT_VBOOT_DIR=`readlink -e "$2"`
+				shift ;;
+			--deploy-all)
+				DEPLOY=true
+				shift ;;
 			*)
 				shift ;;
 		esac
@@ -97,18 +113,38 @@ package_check()
 
 gen_artik_release()
 {
-	upper_model=$(echo -n ${TARGET_BOARD} | awk '{print toupper($0)}')
-	cat > $TARGET_DIR/artik_release << __EOF__
-BUILD_VERSION=${BUILD_VERSION}
-BUILD_DATE=${BUILD_DATE}
+	if [ "$ARTIK_RELEASE_LEGACY" != "1" ]; then
+		cat > $TARGET_DIR/artik_release << __EOF__
+BUILD_VERSION=
+BUILD_DATE=
 BUILD_UBOOT=
 BUILD_KERNEL=
-MODEL=${upper_model}
+MODEL=
 WIFI_FW=${WIFI_FW}
 BT_FW=${BT_FW}
 ZIGBEE_FW=${ZIGBEE_FW}
 SE_FW=${SE_FW}
 __EOF__
+	else
+		cat > $TARGET_DIR/artik_release << __EOF__
+RELEASE_VERSION=
+RELEASE_DATE=
+RELEASE_UBOOT=
+RELEASE_KERNEL=
+MODEL=
+WIFI_FW=${WIFI_FW}
+BT_FW=${BT_FW}
+ZIGBEE_FW=${ZIGBEE_FW}
+__EOF__
+	fi
+}
+
+fill_artik_release()
+{
+	upper_model=$(echo -n ${TARGET_BOARD} | awk '{print toupper($0)}')
+	sed -i "s/_VERSION=.*/_VERSION=${BUILD_VERSION}/" ${TARGET_DIR}/artik_release
+	sed -i "s/_DATE=.*/_DATE=${BUILD_DATE}/" ${TARGET_DIR}/artik_release
+	sed -i "s/MODEL=.*/MODEL=${upper_model}/" ${TARGET_DIR}/artik_release
 }
 
 trap 'error ${LINENO} ${?}' ERR
@@ -143,25 +179,31 @@ mkdir -p $TARGET_DIR
 
 gen_artik_release
 
-./build_uboot.sh
-./build_kernel.sh
+if [ "$PREBUILT_VBOOT_DIR" == "" ]; then
+	./build_uboot.sh
+	./build_kernel.sh
 
-if $VERIFIED_BOOT ; then
-	if [ "$VBOOT_ITS" == "" ]; then
-		VBOOT_ITS=$PREBUILT_DIR/kernel_fit_verify.its
+	if $VERIFIED_BOOT ; then
+		if [ "$VBOOT_ITS" == "" ]; then
+			VBOOT_ITS=$PREBUILT_DIR/kernel_fit_verify.its
+		fi
+		if [ "$VBOOT_KEYDIR" == "" ]; then
+			echo "Please specify key directory using --vboot-keydir"
+			exit 0
+		fi
+		./mkvboot.sh $TARGET_DIR $VBOOT_KEYDIR $VBOOT_ITS
 	fi
-	if [ "$VBOOT_KEYDIR" == "" ]; then
-		echo "Please specify key directory using --vboot-keydir"
-		exit 0
-	fi
-	./mkvboot.sh $TARGET_DIR $VBOOT_KEYDIR $VBOOT_ITS
+else
+	find $PREBUILT_VBOOT_DIR -maxdepth 1 -type f -exec cp -t $TARGET_DIR {} +
 fi
+
+fill_artik_release
 
 if $SECURE_BOOT ; then
 	./mksboot.sh $TARGET_DIR
 fi
 
-./mksdboot.sh $MICROSD_IMAGE
+./mksdboot.sh
 
 ./mkbootimg.sh
 
@@ -176,7 +218,7 @@ if $FULL_BUILD ; then
 	if [ "$FEDORA_PREBUILT_RPM_DIR" != "" ]; then
 		PREBUILD_ADD_CMD="-r $FEDORA_PREBUILT_RPM_DIR"
 	fi
-	./build_fedora.sh -o $TARGET_DIR -b $FEDORA_TARGET_BOARD \
+	./build_fedora.sh $BUILD_CONF -o $TARGET_DIR -b $FEDORA_TARGET_BOARD \
 		-p $FEDORA_PACKAGE_FILE -n $FEDORA_NAME $SKIP_CLEAN $SKIP_FEDORA_BUILD \
 		-k fedora-arm-${FEDORA_TARGET_BOARD}.ks \
 		$PREBUILD_ADD_CMD
@@ -194,12 +236,32 @@ else
 fi
 
 ./mksdfuse.sh $MICROSD_IMAGE
+if $DEPLOY; then
+	mkdir $TARGET_DIR/sdboot
+	./mksdfuse.sh -m
+	mv $TARGET_DIR/${TARGET_BOARD}_sdcard-*.img $TARGET_DIR/sdboot
+
+	mkdir $TARGET_DIR/hwtest
+	if [ "$HWTEST_ROOTFS_PATH" == "" ]; then
+		HWTEST_ROOTFS_PATH=$TARGET_DIR/rootfs.tar.gz
+	fi
+	if [ "$HWTEST_IMAGE_PATH" == "" ]; then
+		HW_ARGS=" --hwtest-rootfs $HWTEST_ROOTFS_PATH --hwtest-mfg $HWTEST_MFG_PATH"
+	else
+		HW_ARGS=" -f $HWTEST_IMAGE_PATH"
+	fi
+	./mksdhwtest.sh $HW_ARGS
+	if [ "$HWTEST_RECOVERY_IMAGE" == "1" ]; then
+		./mksdhwtest.sh $HW_ARGS --recovery
+	fi
+	mv $TARGET_DIR/${TARGET_BOARD}_hwtest*.img $TARGET_DIR/hwtest
+fi
 
 ./mkrootfs_image.sh $TARGET_DIR
 
 if [ -e $PREBUILT_DIR/flash_all_by_fastboot.sh ]; then
 	cp $PREBUILT_DIR/flash_all_by_fastboot.sh $TARGET_DIR
-	cp $PREBUILT_DIR/partition.txt $TARGET_DIR
+	[ -e $PREBUILT_DIR/partition.txt ] && cp $PREBUILT_DIR/partition.txt $TARGET_DIR
 else
 	cp flash_all_by_fastboot.sh $TARGET_DIR
 fi

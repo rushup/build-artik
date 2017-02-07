@@ -72,7 +72,12 @@ gen_envs()
 
 	# Generate hwtest sd-boot param
 	sed -i -e 's/bootcmd=run .*/bootcmd=run hwtestboot/g' default_envs.txt
+	sed -i -e 's/bootdelay=.*/bootdelay=0/g' default_envs.txt
 	tools/mkenvimage -s 16384 -o params_hwtest.bin default_envs.txt
+
+	# Generate hwtest verified boot param
+	sed -i -e 's/bootcmd=run .*/bootcmd=run hwtestvboot/g' default_envs.txt
+	tools/mkenvimage -s 16384 -o params_hwtest_vboot.bin default_envs.txt
 
 	# Generate hwtest sd-boot recovery param
 	sed -i -e 's/bootcmd=run .*/bootcmd=run hwtest_recoveryboot/g' default_envs.txt
@@ -98,7 +103,7 @@ gen_version_info()
 		grep "define PLAIN_VERSION" | awk -F \" '{print $2}'`
 	UBOOT_VERSION="U-Boot $PLAIN_VERSION"
 	if [ -e $TARGET_DIR/artik_release ]; then
-		sed -i "s/BUILD_UBOOT=.*/BUILD_UBOOT=${UBOOT_VERSION}/" \
+		sed -i "s/_UBOOT=.*/_UBOOT=${UBOOT_VERSION}/" \
 			$TARGET_DIR/artik_release
 	fi
 }

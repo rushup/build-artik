@@ -1,11 +1,16 @@
 #!/bin/bash
 
 #code signer v2.4
-CODE_SIGNER="$PREBUILT_DIR/codesigner_v24"
+CODE_SIGNER="$PREBUILT_DIR/client"
+CRT_PEM="$PREBUILT_DIR/client1.cert.pem"
+IP_FILE="$PREBUILT_DIR/codesigner_ip"
 
-#OEM Private Key
-OEM_PRIV_KEY_NAME="$PREBUILT_DIR/sign_keys/a520_b2b_V24.prv"
-OEM_PUB_KEY_NAME="$PREBUILT_DIR/sign_keys/a520_b2b_V24.spk"
+# Sanity check
+[ -e $CODE_SIGNER ] || exit 0
+[ -e $CRT_PEM ] || exit 0
+[ -e $IP_FILE ] || exit 0
+
+IP_ADDR=`cat $IP_FILE`
 
 #u-boot infomation
 UBOOT_NAME=u-boot.bin
@@ -36,54 +41,23 @@ truncate -s $U_BOOT_PADD_B $UBOOT_PADD_NAME
 #Add Signature
 #------------------------------------------------------------------------------------------------------------
 #u-boot: Add signature(256B) to the end of input binary.
-$CODE_SIGNER -STAGE2 -IMGMAKE -infile=$UBOOT_PADD_NAME -outfile=$UBOOT_TARGET_BIN -pri=$OEM_PRIV_KEY_NAME
+$CODE_SIGNER -ip $IP_ADDR -crt $CRT_PEM -bin $UBOOT_PADD_NAME -out $UBOOT_TARGET_BIN
 
 #bl2: Add signature(256B) to the end of input binary.
-$CODE_SIGNER -STAGE2 -IMGMAKE -infile=$BL2_NAME -outfile=$BL2_TARGET_BIN -pri=$OEM_PRIV_KEY_NAME
+$CODE_SIGNER -ip $IP_ADDR -crt $CRT_PEM -bin $BL2_NAME -out $BL2_TARGET_BIN
 #------------------------------------------------------------------------------------------------------------
 
-
-#Verifying signature
-#-----------------------------------------------------------------------------------
-#u-boot: Verify added signature with OEM public key.
-$CODE_SIGNER -STAGE2 -VERIFY -infile=$UBOOT_TARGET_BIN -pub=$OEM_PUB_KEY_NAME
-
-if [ $? -ne 0 ]; then
-	if [ -f "$UBOOT_PADD_NAME" ]; then
-		rm -rf $UBOOT_PADD_NAME
-	fi
-	if [ -f "$UBOOT_TARGET_BIN" ]; then
-		rm -rf $UBOOT_TARGET_BIN
-	fi
-	echo "### u-boot verification: Failed ###"
-else
-	echo "### u-boot verification: Success ###"
-	cp $UBOOT_TARGET_BIN $UBOOT_NAME
-	if [ -f "$UBOOT_PADD_NAME" ]; then
-		rm -rf $UBOOT_PADD_NAME
-	fi
-	if [ -f "$UBOOT_TARGET_BIN" ]; then
-		rm -rf $UBOOT_TARGET_BIN
-	fi
-
+cp $UBOOT_TARGET_BIN $UBOOT_NAME
+if [ -f "$UBOOT_PADD_NAME" ]; then
+	rm -rf $UBOOT_PADD_NAME
+fi
+if [ -f "$UBOOT_TARGET_BIN" ]; then
+	rm -rf $UBOOT_TARGET_BIN
 fi
 
-#bl2: Verify added signature with OEM public key.
-$CODE_SIGNER -STAGE2 -VERIFY -infile=$BL2_TARGET_BIN -pub=$OEM_PUB_KEY_NAME
-
-if [ $? -ne 0 ]; then
-	if [ -f "$BL2_TARGET_BIN" ]; then
-		rm -rf $BL2_TARGET_BIN
-	fi
-	echo "### bl2 verification: Failed ###"
-else
-	echo "### bl2 verification: Success ###"
-	cp $BL2_TARGET_BIN $BL2_NAME
-	if [ -f "$BL2_TARGET_BIN" ]; then
-		rm -rf $BL2_TARGET_BIN
-	fi
-
+cp $BL2_TARGET_BIN $BL2_NAME
+if [ -f "$BL2_TARGET_BIN" ]; then
+	rm -rf $BL2_TARGET_BIN
 fi
-#-----------------------------------------------------------------------------------
 
 popd

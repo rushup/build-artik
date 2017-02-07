@@ -11,6 +11,7 @@ SKIP_BUILD=false
 SKIP_CLEAN=false
 KICKSTART_FILE=../spin-kickstarts/fedora-arm-artik.ks
 KICKSTART_DIR=../spin-kickstarts
+BUILDCONFIG=
 
 print_usage()
 {
@@ -22,6 +23,7 @@ print_usage()
 	echo "-r		Prebuilt rpm directory"
 	echo "-k		Kickstart file"
 	echo "-K		Kickstart directory"
+	echo "-C conf		Build configurations(If not specified, use default .fed-artik-build.conf"
 	echo "--skip-build	Skip package build"
 	echo "--skip-clean	Skip local repository clean-up"
 	exit 0
@@ -53,6 +55,9 @@ parse_options()
 			-K)
 				KICKSTART_DIR=`readlink -e "$2"`
 				shift ;;
+			-C)
+				BUILDCONFIG=`readlink -e "$2"`
+				shift ;;
 			--skip-build)
 				SKIP_BUILD=true
 				shift ;;
@@ -76,7 +81,7 @@ build_package()
 
 	pushd ../$pkg
 	echo "Build $pkg.."
-	fed-artik-build
+	fed-artik-build $BUILD_CONF
 	popd
 }
 
@@ -84,16 +89,22 @@ package_check fed-artik-creator
 
 parse_options "$@"
 
+if [ "$BUILDCONFIG" != "" ]; then
+	BUILD_CONF="-C $BUILDCONFIG"
+else
+	BUILD_CONF=""
+fi
+
 FEDORA_PACKAGES=`cat $TARGET_PACKAGE`
 
 if ! $SKIP_CLEAN; then
 	echo "Clean up local repository..."
-	fed-artik-build --clean-repos-and-exit
+	fed-artik-build $BUILD_CONF --clean-repos-and-exit
 fi
 
 if [ "$PREBUILT_RPM_DIR" != "" ]; then
 	echo "Copy prebuilt rpms into prebuilt directory"
-	fed-artik-creator --copy-rpm-dir $PREBUILT_RPM_DIR
+	fed-artik-creator $BUILD_CONF --copy-rpm-dir $PREBUILT_RPM_DIR
 fi
 
 if ! $SKIP_BUILD; then
@@ -103,14 +114,14 @@ if ! $SKIP_BUILD; then
 	done
 fi
 
-fed-artik-creator --copy-rpm-dir $KICKSTART_DIR/prebuilt
+fed-artik-creator $BUILD_CONF --copy-rpm-dir $KICKSTART_DIR/prebuilt
 
 if [ "$FEDORA_NAME" != "" ]; then
-	fed-artik-creator --copy-kickstart-dir $KICKSTART_DIR \
+	fed-artik-creator $BUILD_CONF --copy-kickstart-dir $KICKSTART_DIR \
 		--ks-file $KICKSTART_DIR/$KICKSTART_FILE -o $TARGET_DIR \
 		--output-file $FEDORA_NAME
 else
-	fed-artik-creator --copy-kickstart-dir $KICKSTART_DIR \
+	fed-artik-creator $BUILD_CONF --copy-kickstart-dir $KICKSTART_DIR \
 		--ks-file $KICKSTART_DIR/$KICKSTART_FILE -o $TARGET_DIR
 fi
 

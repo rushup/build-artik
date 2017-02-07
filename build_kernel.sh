@@ -60,7 +60,7 @@ gen_version_info()
 {
 	KERNEL_VERSION=`make EXTRAVERSION="-$BUILD_VERSION" kernelrelease | grep -v scripts`
 	if [ -e $TARGET_DIR/artik_release ]; then
-		sed -i "s/BUILD_KERNEL=.*/BUILD_KERNEL=${KERNEL_VERSION}/" $TARGET_DIR/artik_release
+		sed -i "s/_KERNEL=.*/_KERNEL=${KERNEL_VERSION}/" $TARGET_DIR/artik_release
 	fi
 }
 

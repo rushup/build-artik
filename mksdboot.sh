@@ -8,7 +8,6 @@ print_usage()
 {
 	echo "-h/--help         Show help options"
 	echo "-b [TARGET_BOARD]	Target board ex) -b artik710|artik530|artik5|artik10"
-	echo "-m		Generate sd boot image"
 
 	exit 0
 }
@@ -23,9 +22,6 @@ parse_options()
 				shift ;;
 			-b)
 				TARGET_BOARD="$2"
-				shift ;;
-			-m)
-				SDBOOT_IMAGE=true
 				shift ;;
 		esac
 	done
@@ -105,11 +101,7 @@ case "$CHIP_NAME" in
 		;;
 esac
 
-if $SDBOOT_IMAGE; then
-	PARAMS_NAME="params_sdboot.bin"
-else
-	PARAMS_NAME="params_recovery.bin"
-fi
+PARAMS_NAME="params_recovery.bin"
 
 test -e $TARGET_DIR/$PARAMS_NAME || die
 
@@ -129,5 +121,10 @@ case "$CHIP_NAME" in
 	*)
 		exynos_sdboot_gen ;;
 esac
+
+PARAMS_NAME="params_sdboot.bin"
+cp $IMG_NAME sd_boot_sdboot.img
+
+dd conv=notrunc if=$TARGET_DIR/$PARAMS_NAME of=sd_boot_sdboot.img bs=512 seek=$ENV_OFFSET
 
 sync

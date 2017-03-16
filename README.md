@@ -64,12 +64,12 @@ repo sync
 
 Please ensure u-boot-artik and linux-artik directory on top of the build-artik.
 + ARTIK710>
-<br>
+
 u-boot-artik/
 linux-artik/
 build-artik/
 boot-firmwares-artik710
-</br>
+
 ```
 mkdir artik710
 cd artik710
@@ -80,12 +80,12 @@ git clone https://github.com/SamsungARTIK/boot-firmwares-artik710.git -b release
 cd build-artik
 ```
 + ARTIK530>
-<br>
+
 u-boot-artik/
 linux-artik/
 build-artik/
 boot-firmwares-artik530
-</br>
+
 ```
 mkdir artik530
 cd artik530

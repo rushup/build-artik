@@ -96,6 +96,10 @@ ROOTFS_START_SECTOR=$((ROOTFS_START_OFFSET << 11))
 if $HWTEST_RECOVERY_IMAGE; then
 	HWTEST_SDBOOT=sd_boot_hwtest_recovery.img
 	PARAMS_NAME=params_hwtest_recovery.bin
+	if [ "$HWTEST_RECOVERY_ENV" != "" ]; then
+		PARAMS_NAME=`readlink -e "$HWTEST_RECOVERY_ENV"`
+		ENV_OFFSET=$HWTEST_RECOVERY_ENV_OFFSET
+	fi
 else
 	HWTEST_SDBOOT=sd_boot_hwtest.img
 	PARAMS_NAME=params_hwtest.bin
@@ -233,6 +237,11 @@ install_output()
 			;;
 		s5p4418)
 			sudo su -c "cp $TARGET_DIR/bl1-emmcboot.img mnt"
+			sudo su -c "cp $TARGET_DIR/loader-emmc.img mnt"
+			sudo su -c "cp $TARGET_DIR/bl_mon.img mnt"
+			if [ "$SECURE_BOOT" == "enable" ]; then
+				sudo su -c "cp $TARGET_DIR/secureos.img mnt"
+			fi
 			sudo su -c "cp $TARGET_DIR/bootloader.img mnt"
 			sudo su -c "cp $TARGET_DIR/partmap_emmc.txt mnt"
 			;;

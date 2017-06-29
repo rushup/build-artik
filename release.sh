@@ -9,9 +9,12 @@ VBOOT_KEYDIR=
 VBOOT_ITS=
 SKIP_CLEAN=
 SKIP_FEDORA_BUILD=
+SKIP_UBUNTU_BUILD=
 BUILD_CONF=
 PREBUILT_VBOOT_DIR=
+PREBUILT_REPO_OPT=
 DEPLOY=false
+OS_NAME=fedora
 
 print_usage()
 {
@@ -23,6 +26,7 @@ print_usage()
 	echo "-u/--url		Specify an url for downloading rootfs"
 	echo "-C		fed-artik-build configuration file"
 	echo "--full-build	Full build with generating fedora rootfs"
+	echo "--ubuntu		Ubuntu rootfs build"
 	echo "--local-rootfs	Copy fedora rootfs from local file instead of downloading"
 	echo "--vboot		Generated verified boot image"
 	echo "--vboot-keydir	Specify key directoy for verified boot"
@@ -30,6 +34,8 @@ print_usage()
 	echo "--sboot		Generated signed boot image"
 	echo "--skip-clean	Skip fedora local repository clean"
 	echo "--skip-fedora-build	Skip fedora build"
+	echo "--use-prebuilt-repo	Use prebuilt repository"
+	echo "--skip-ubuntu-build	Skip ubuntu build"
 	echo "--prebuilt-vboot	Specify prebuilt directory path for vboot"
 	echo "--deploy-all	Deploy release"
 	exit 0
@@ -94,11 +100,20 @@ parse_options()
 			--skip-fedora-build)
 				SKIP_FEDORA_BUILD=--skip-build
 				shift ;;
+			--skip-ubuntu-build)
+				SKIP_UBUNTU_BUILD=--skip-build
+				shift ;;
+			--use-prebuilt-repo)
+				PREBUILT_REPO_OPT="--use-prebuilt-repo $2"
+				shift ;;
 			--prebuilt-vboot)
 				PREBUILT_VBOOT_DIR=`readlink -e "$2"`
 				shift ;;
 			--deploy-all)
 				DEPLOY=true
+				shift ;;
+			--ubuntu)
+				OS_NAME=ubuntu
 				shift ;;
 			*)
 				shift ;;
@@ -113,13 +128,15 @@ package_check()
 
 gen_artik_release()
 {
+	upper_model=$(echo -n ${TARGET_BOARD} | awk '{print toupper($0)}')
 	if [ "$ARTIK_RELEASE_LEGACY" != "1" ]; then
 		cat > $TARGET_DIR/artik_release << __EOF__
-BUILD_VERSION=
-BUILD_DATE=
+OFFICIAL_VERSION=${OFFICIAL_VERSION}
+BUILD_VERSION=${BUILD_VERSION}
+BUILD_DATE=${BUILD_DATE}
 BUILD_UBOOT=
 BUILD_KERNEL=
-MODEL=
+MODEL=${upper_model}
 WIFI_FW=${WIFI_FW}
 BT_FW=${BT_FW}
 ZIGBEE_FW=${ZIGBEE_FW}
@@ -127,24 +144,18 @@ SE_FW=${SE_FW}
 __EOF__
 	else
 		cat > $TARGET_DIR/artik_release << __EOF__
-RELEASE_VERSION=
-RELEASE_DATE=
+OFFICIAL_VERSION=${OFFICIAL_VERSION}
+RELEASE_VERSION=${BUILD_VERSION}
+RELEASE_DATE=${BUILD_DATE}
 RELEASE_UBOOT=
 RELEASE_KERNEL=
-MODEL=
+MODEL=${upper_model}
 WIFI_FW=${WIFI_FW}
 BT_FW=${BT_FW}
 ZIGBEE_FW=${ZIGBEE_FW}
+SE_FW=${SE_FW}
 __EOF__
 	fi
-}
-
-fill_artik_release()
-{
-	upper_model=$(echo -n ${TARGET_BOARD} | awk '{print toupper($0)}')
-	sed -i "s/_VERSION=.*/_VERSION=${BUILD_VERSION}/" ${TARGET_DIR}/artik_release
-	sed -i "s/_DATE=.*/_DATE=${BUILD_DATE}/" ${TARGET_DIR}/artik_release
-	sed -i "s/MODEL=.*/MODEL=${upper_model}/" ${TARGET_DIR}/artik_release
 }
 
 trap 'error ${LINENO} ${?}' ERR
@@ -197,8 +208,6 @@ else
 	find $PREBUILT_VBOOT_DIR -maxdepth 1 -type f -exec cp -t $TARGET_DIR {} +
 fi
 
-fill_artik_release
-
 if $SECURE_BOOT ; then
 	./mksboot.sh $TARGET_DIR
 fi
@@ -209,24 +218,39 @@ fi
 
 if $FULL_BUILD ; then
 	if [ "$BASE_BOARD" != "" ]; then
-		FEDORA_TARGET_BOARD=$BASE_BOARD
+		OS_TARGET_BOARD=$BASE_BOARD
 	else
-		FEDORA_TARGET_BOARD=$TARGET_BOARD
+		OS_TARGET_BOARD=$TARGET_BOARD
 	fi
 
-	FEDORA_NAME=fedora-arm-$FEDORA_TARGET_BOARD-rootfs-$BUILD_VERSION-$BUILD_DATE
-	if [ "$FEDORA_PREBUILT_RPM_DIR" != "" ]; then
-		PREBUILD_ADD_CMD="-r $FEDORA_PREBUILT_RPM_DIR"
+	OS_OUTPUT_NAME=${OS_NAME}-arm-$OS_TARGET_BOARD-rootfs-$BUILD_VERSION-$BUILD_DATE
+	if [ "$OS_NAME" == "ubuntu" ]; then
+		BUILD_ARCH=$ARCH
+		if [ "$BUILD_ARCH" == "arm" ]; then
+			BUILD_ARCH=armhf
+		fi
+		UBUNTU_IMG_DIR=../ubuntu-build-service/xenial-${BUILD_ARCH}-${OS_TARGET_BOARD}
+		./build_ubuntu.sh -p config/${OS_TARGET_BOARD}_ubuntu.package \
+			--ubuntu-name $OS_OUTPUT_NAME \
+			$PREBUILT_REPO_OPT \
+			--arch $BUILD_ARCH --chroot xenial-amd64-${BUILD_ARCH} \
+			--dest-dir $TARGET_DIR $SKIP_UBUNTU_BUILD \
+			--prebuilt-dir ../ubuntu-build-service/prebuilt/$BUILD_ARCH \
+			--img-dir $UBUNTU_IMG_DIR
+	else
+		if [ "$FEDORA_PREBUILT_RPM_DIR" != "" ]; then
+			PREBUILD_ADD_CMD="-r $FEDORA_PREBUILT_RPM_DIR"
+		fi
+		./build_fedora.sh $BUILD_CONF -o $TARGET_DIR -b $OS_TARGET_BOARD \
+			-p $FEDORA_PACKAGE_FILE -n $OS_OUTPUT_NAME $SKIP_CLEAN $SKIP_FEDORA_BUILD \
+			-k fedora-arm-${OS_TARGET_BOARD}.ks \
+			$PREBUILD_ADD_CMD
 	fi
-	./build_fedora.sh $BUILD_CONF -o $TARGET_DIR -b $FEDORA_TARGET_BOARD \
-		-p $FEDORA_PACKAGE_FILE -n $FEDORA_NAME $SKIP_CLEAN $SKIP_FEDORA_BUILD \
-		-k fedora-arm-${FEDORA_TARGET_BOARD}.ks \
-		$PREBUILD_ADD_CMD
 
-	MD5_SUM=$(md5sum $TARGET_DIR/${FEDORA_NAME}.tar.gz | awk '{print $1}')
-	FEDORA_TARBALL=${FEDORA_NAME}-${MD5_SUM}.tar.gz
-	mv $TARGET_DIR/${FEDORA_NAME}.tar.gz $TARGET_DIR/$FEDORA_TARBALL
-	cp $TARGET_DIR/$FEDORA_TARBALL $TARGET_DIR/rootfs.tar.gz
+	MD5_SUM=$(md5sum $TARGET_DIR/${OS_OUTPUT_NAME}.tar.gz | awk '{print $1}')
+	OS_TARBALL=${OS_OUTPUT_NAME}-${MD5_SUM}.tar.gz
+	mv $TARGET_DIR/${OS_OUTPUT_NAME}.tar.gz $TARGET_DIR/$OS_TARBALL
+	cp $TARGET_DIR/$OS_TARBALL $TARGET_DIR/rootfs.tar.gz
 else
 	if [ "$LOCAL_ROOTFS" == "" ]; then
 		./release_rootfs.sh -b $TARGET_BOARD $SERVER_URL
@@ -240,7 +264,9 @@ if $DEPLOY; then
 	mkdir $TARGET_DIR/sdboot
 	./mksdfuse.sh -m
 	mv $TARGET_DIR/${TARGET_BOARD}_sdcard-*.img $TARGET_DIR/sdboot
+fi
 
+if $DEPLOY && [ "$HWTEST_MFG_PATH" != "" ]; then
 	mkdir $TARGET_DIR/hwtest
 	if [ "$HWTEST_ROOTFS_PATH" == "" ]; then
 		HWTEST_ROOTFS_PATH=$TARGET_DIR/rootfs.tar.gz
@@ -265,6 +291,8 @@ if [ -e $PREBUILT_DIR/flash_all_by_fastboot.sh ]; then
 else
 	cp flash_all_by_fastboot.sh $TARGET_DIR
 fi
+
+cp expand_rootfs.sh $TARGET_DIR
 
 if [ -e $PREBUILT_DIR/$TARGET_BOARD/u-boot-recovery.bin ]; then
 	cp $PREBUILT_DIR/$TARGET_BOARD/u-boot-recovery.bin $TARGET_DIR

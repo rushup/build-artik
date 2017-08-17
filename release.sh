@@ -266,23 +266,6 @@ if $DEPLOY; then
 	mv $TARGET_DIR/${TARGET_BOARD}_sdcard-*.img $TARGET_DIR/sdboot
 fi
 
-if $DEPLOY && [ "$HWTEST_MFG_PATH" != "" ]; then
-	mkdir $TARGET_DIR/hwtest
-	if [ "$HWTEST_ROOTFS_PATH" == "" ]; then
-		HWTEST_ROOTFS_PATH=$TARGET_DIR/rootfs.tar.gz
-	fi
-	if [ "$HWTEST_IMAGE_PATH" == "" ]; then
-		HW_ARGS=" --hwtest-rootfs $HWTEST_ROOTFS_PATH --hwtest-mfg $HWTEST_MFG_PATH"
-	else
-		HW_ARGS=" -f $HWTEST_IMAGE_PATH"
-	fi
-	./mksdhwtest.sh $HW_ARGS
-	if [ "$HWTEST_RECOVERY_IMAGE" == "1" ]; then
-		./mksdhwtest.sh $HW_ARGS --recovery
-	fi
-	mv $TARGET_DIR/${TARGET_BOARD}_hwtest*.img $TARGET_DIR/hwtest
-fi
-
 ./mkrootfs_image.sh $TARGET_DIR
 
 if [ -e $PREBUILT_DIR/flash_all_by_fastboot.sh ]; then

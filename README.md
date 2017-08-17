@@ -89,10 +89,10 @@ boot-firmwares-artik530
 ```
 mkdir artik530
 cd artik530
-git clone https://github.com/SamsungARTIK/linux-artik.git -b A530_os_2.0.0
-git clone https://github.com/SamsungARTIK/u-boot-artik.git -b A530_os_2.0.0
-git clone https://github.com/SamsungARTIK/build-artik.git -b A530_os_2.0.0
-git clone https://github.com/SamsungARTIK/boot-firmwares-artik530.git -b A530_os_2.0.0
+git clone https://github.com/SamsungARTIK/linux-artik.git -b A530_os_2.1.0
+git clone https://github.com/SamsungARTIK/u-boot-artik.git -b A530_os_2.1.0
+git clone https://github.com/SamsungARTIK/build-artik.git -b A530_os_2.1.0
+git clone https://github.com/SamsungARTIK/boot-firmwares-artik530.git -b A530_os_2.1.0
 cd build-artik
 ```
 
@@ -145,7 +145,7 @@ repo sync
 ```
 mkdir artik530_full
 cd artik530_full
-repo init -u https://github.com/SamsungARTIK/manifest.git -b A530_os_2.0.0 -m artik530.xml
+repo init -u https://github.com/SamsungARTIK/manifest.git -b A530_os_2.1.0 -m artik530.xml
 repo sync
 ```
 

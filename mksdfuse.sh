@@ -85,22 +85,38 @@ then
 	BUILD_DATE=`date +"%Y%m%d.%H%M%S"`
 fi
 
+BOOT_SIZE_SECTOR=$((BOOT_SIZE << 11))
+MODULE_SIZE_SECTOR=$((MODULE_SIZE << 11))
+
 BOOT_START_SECTOR=$((SKIP_BOOT_SIZE << 11))
+BOOT_END_SECTOR=$(expr $BOOT_START_SECTOR + $BOOT_SIZE_SECTOR - 1)
+
 MODULE_START_OFFSET=$(expr $BOOT_SIZE + $SKIP_BOOT_SIZE)
-MODULE_START_SECTOR=$((MODULE_START_OFFSET << 11))
-ROOTFS_START_OFFSET=$(expr $MODULE_START_OFFSET + $MODULE_SIZE)
-ROOTFS_START_SECTOR=$((ROOTFS_START_OFFSET << 11))
+MODULE_START_SECTOR=$(expr $BOOT_END_SECTOR + 1)
+MODULE_END_SECTOR=$(expr $MODULE_START_SECTOR + $MODULE_SIZE_SECTOR - 1)
+
+ROOTFS_START_SECTOR=$(expr $MODULE_END_SECTOR + 1)
 
 #Partition For OTA
 EXT_PART_PAD=2048
 FLAG_START_SECTOR_OTA=$((SKIP_BOOT_SIZE << 11))
-FLAG_SIZE=128
-BOOT_START_SECTOR_OTA=$(expr $FLAG_START_SECTOR_OTA + $FLAG_SIZE \* 2)
-BOOT0_START_SECTOR_OTA=$(expr $BOOT_START_SECTOR_OTA + $((BOOT_SIZE << 10)) \* 2)
-EXT_START_SECTOR_OTA=$(expr $BOOT0_START_SECTOR_OTA + $((BOOT_SIZE << 10)) \* 2)
+FLAG_SIZE_SECTOR=$(expr 128 \* 2)
+FLAG_END_SECTOR_OTA=$(expr $FLAG_START_SECTOR_OTA + $FLAG_SIZE_SECTOR - 1)
+
+BOOT_START_SECTOR_OTA=$(expr $FLAG_END_SECTOR_OTA + 1)
+BOOT_END_SECTOR_OTA=$(expr $BOOT_START_SECTOR_OTA + $BOOT_SIZE_SECTOR - 1)
+
+BOOT0_START_SECTOR_OTA=$(expr $BOOT_END_SECTOR_OTA + 1)
+BOOT0_END_SECTOR_OTA=$(expr $BOOT0_START_SECTOR_OTA + $BOOT_SIZE_SECTOR - 1)
+
+EXT_START_SECTOR_OTA=$(expr $BOOT0_END_SECTOR_OTA + 1)
 MODULES_START_SECTOR_OTA=$(expr $EXT_START_SECTOR_OTA + $EXT_PART_PAD)
-MODULES0_START_SECTOR_OTA=$(expr $MODULES_START_SECTOR_OTA + $EXT_PART_PAD + $((MODULE_SIZE << 10)) \* 2)
-ROOTFS_START_SECTOR_OTA=$(expr $MODULES0_START_SECTOR_OTA + $EXT_PART_PAD + $((MODULE_SIZE << 10)) \* 2)
+MODULES_END_SECTOR_OTA=$(expr $MODULES_START_SECTOR_OTA + $MODULE_SIZE_SECTOR - 1)
+
+MODULES0_START_SECTOR_OTA=$(expr $MODULES_END_SECTOR_OTA + $EXT_PART_PAD + 1)
+MODULES0_END_SECTOR_OTA=$(expr $MODULES0_START_SECTOR_OTA + $MODULE_SIZE_SECTOR - 1)
+
+ROOTFS_START_SECTOR_OTA=$(expr $MODULES0_END_SECTOR_OTA + $EXT_PART_PAD + 1)
 
 repartition() {
 fdisk $1 << __EOF__
@@ -108,18 +124,18 @@ n
 p
 1
 $BOOT_START_SECTOR
-+${BOOT_SIZE}M
+$BOOT_END_SECTOR
 
 n
 p
 2
-${MODULE_START_SECTOR}
-+${MODULE_SIZE}M
+$MODULE_START_SECTOR
+$MODULE_END_SECTOR
 
 n
 p
 3
-${ROOTFS_START_SECTOR}
+$ROOTFS_START_SECTOR
 
 w
 __EOF__
@@ -131,19 +147,19 @@ n
 p
 1
 $FLAG_START_SECTOR_OTA
-+${FLAG_SIZE}K
+$FLAG_END_SECTOR_OTA
 
 n
 p
 2
 $BOOT_START_SECTOR_OTA
-+${BOOT_SIZE}M
+$BOOT_END_SECTOR_OTA
 
 n
 p
 3
 $BOOT0_START_SECTOR_OTA
-+${BOOT_SIZE}M
+$BOOT0_END_SECTOR_OTA
 
 n
 e
@@ -152,11 +168,11 @@ $EXT_START_SECTOR_OTA
 
 n
 $MODULES_START_SECTOR_OTA
-+${MODULE_SIZE}M
+$MODULES_END_SECTOR_OTA
 
 n
 $MODULES0_START_SECTOR_OTA
-+${MODULE_SIZE}M
+$MODULES0_END_SECTOR_OTA
 
 n
 $ROOTFS_START_SECTOR_OTA
@@ -205,16 +221,13 @@ install_output()
 
 	if [ "$OTA" == "true" ] && [ "$SDBOOT_IMAGE" == "true" ]; then
 		LOOP_ROOTFS=`sudo kpartx -l ${IMG_NAME} | awk '{ print $1 }' | awk 'NR == 7'`
-		FLAG_START_OFFSET=`expr $FLAG_START_SECTOR_OTA / 2`
-		BOOT_START_OFFSET=`expr $BOOT_START_SECTOR_OTA / 2`
-		MODULE_START_OFFSET=`expr $MODULES_START_SECTOR_OTA / 2`
 
 		sudo su -c "dd conv=notrunc if=$TARGET_DIR/flag.img of=$IMG_NAME \
-			bs=1024 seek=$FLAG_START_OFFSET count=$FLAG_SIZE"
+			bs=512 seek=$FLAG_START_SECTOR_OTA count=$FLAG_SIZE_SECTOR"
 		sudo su -c "dd conv=notrunc if=$TARGET_DIR/boot.img of=$IMG_NAME \
-			bs=1024 seek=$BOOT_START_OFFSET count=$((BOOT_SIZE << 10))"
+			bs=512 seek=$BOOT_START_SECTOR_OTA count=$BOOT_SIZE_SECTOR"
 		sudo su -c "dd conv=notrunc if=$TARGET_DIR/modules.img of=$IMG_NAME \
-			bs=1024 seek=$MODULE_START_OFFSET count=$((MODULE_SIZE << 10))"
+			bs=512 seek=$MODULES_START_SECTOR_OTA count=$MODULE_SIZE_SECTOR"
 	else
 		LOOP_ROOTFS=`sudo kpartx -l ${IMG_NAME} | awk '{ print $1 }' | awk 'NR == 3'`
 		sudo su -c "dd conv=notrunc if=$TARGET_DIR/boot.img of=$IMG_NAME 	\
@@ -251,14 +264,9 @@ install_output()
 			sudo su -c "cp $TARGET_DIR/bl1-emmcboot.img mnt"
 			sudo su -c "cp $TARGET_DIR/loader-emmc.img mnt"
 			sudo su -c "cp $TARGET_DIR/bl_mon.img mnt"
-			if [ "$SECURE_BOOT" == "enable" ]; then
-				sudo su -c "cp $TARGET_DIR/secureos.img mnt"
-			fi
+			sudo su -c "cp $TARGET_DIR/secureos.img mnt"
 			sudo su -c "cp $TARGET_DIR/bootloader.img mnt"
 			sudo su -c "cp $TARGET_DIR/partmap_emmc.txt mnt"
-			if [ "$OTA" == "true" ]; then
-				sudo su -c "cp $TARGET_DIR/flag.img mnt"
-			fi
 			;;
 		*)
 			sudo su -c "cp $TARGET_DIR/bl1.bin mnt"
@@ -267,6 +275,9 @@ install_output()
 			sudo su -c "cp $TARGET_DIR/tzsw.bin mnt"
 			;;
 		esac
+		if [ "$OTA" == "true" ]; then
+			sudo su -c "cp $TARGET_DIR/flag.img mnt"
+		fi
 
 		sudo su -c "cp $TARGET_DIR/params.bin mnt"
 		sudo su -c "cp $TARGET_DIR/boot.img mnt"

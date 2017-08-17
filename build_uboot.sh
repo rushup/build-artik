@@ -69,19 +69,6 @@ gen_envs()
 
 	sed -i -e 's/bootcmd=run .*/bootcmd=run recoveryvboot/g' default_envs.txt
 	tools/mkenvimage -s 16384 -o params_recovery_vboot.bin default_envs.txt
-
-	# Generate hwtest sd-boot param
-	sed -i -e 's/bootcmd=run .*/bootcmd=run hwtestboot/g' default_envs.txt
-	sed -i -e 's/bootdelay=.*/bootdelay=0/g' default_envs.txt
-	tools/mkenvimage -s 16384 -o params_hwtest.bin default_envs.txt
-
-	# Generate hwtest verified boot param
-	sed -i -e 's/bootcmd=run .*/bootcmd=run hwtestvboot/g' default_envs.txt
-	tools/mkenvimage -s 16384 -o params_hwtest_vboot.bin default_envs.txt
-
-	# Generate hwtest sd-boot recovery param
-	sed -i -e 's/bootcmd=run .*/bootcmd=run hwtest_recoveryboot/g' default_envs.txt
-	tools/mkenvimage -s 16384 -o params_hwtest_recovery.bin default_envs.txt
 }
 
 install_output()

@@ -16,6 +16,8 @@ do
 	sudo umount $disk
 done
 
+START_SECT=`sudo fdisk -l $DEVICE | grep ${DEVICE}3 | awk '{ print $2 }'`
+
 sudo fdisk $DEVICE <<EOF
 p
 d
@@ -23,8 +25,7 @@ d
 n
 p
 3
-
-
+$START_SECT
 
 w
 EOF

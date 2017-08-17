@@ -30,7 +30,7 @@ build()
 	make ARCH=arm distclean
 	make ARCH=arm distclean O=$UBOOT_DIR/output
 	make ARCH=arm $UBOOT_DEFCONFIG O=$UBOOT_DIR/output
-	make ARCH=arm EXTRAVERSION="-$BUILD_VERSION" -j$JOBS O=$UBOOT_DIR/output
+	make ARCH=arm EXTRAVERSION="-$BUILD_VERSION" ${UBOOT_BUILD_OPT} -j$JOBS O=$UBOOT_DIR/output
 }
 
 gen_envs()
@@ -69,19 +69,6 @@ gen_envs()
 
 	sed -i -e 's/bootcmd=run .*/bootcmd=run recoveryvboot/g' default_envs.txt
 	tools/mkenvimage -s 16384 -o params_recovery_vboot.bin default_envs.txt
-
-	# Generate hwtest sd-boot param
-	sed -i -e 's/bootcmd=run .*/bootcmd=run hwtestboot/g' default_envs.txt
-	sed -i -e 's/bootdelay=.*/bootdelay=0/g' default_envs.txt
-	tools/mkenvimage -s 16384 -o params_hwtest.bin default_envs.txt
-
-	# Generate hwtest verified boot param
-	sed -i -e 's/bootcmd=run .*/bootcmd=run hwtestvboot/g' default_envs.txt
-	tools/mkenvimage -s 16384 -o params_hwtest_vboot.bin default_envs.txt
-
-	# Generate hwtest sd-boot recovery param
-	sed -i -e 's/bootcmd=run .*/bootcmd=run hwtest_recoveryboot/g' default_envs.txt
-	tools/mkenvimage -s 16384 -o params_hwtest_recovery.bin default_envs.txt
 }
 
 install_output()
@@ -151,10 +138,11 @@ gen_nexell_image()
 			launch_addr=0x00000000
 			;;
 		s5p4418)
-			nsih_name=raptor-emmc.txt
+			nsih_name=raptor-sd.txt
 			input_file=u-boot.bin
+			hash_file=u-boot.bin.hash
 			output_file=$UBOOT_IMAGE
-			gen_tool=BOOT_BINGEN
+			gen_tool=SECURE_BINGEN
 			launch_addr=$FIP_LOAD_ADDR
 			;;
 		*)
@@ -170,17 +158,43 @@ gen_nexell_image()
 
 
 	if [ "$SECURE_BOOT" == "enable" ]; then
-		if [ "$CHIP_NAME" == "s5p6818" ]; then
-			gen_hash_rsa $TARGET_DIR/${input_file} \
-					$TARGET_DIR/${hash_file} ${PRIVATE_KEY}
+		gen_hash_rsa $TARGET_DIR/${input_file} \
+				$TARGET_DIR/${hash_file} ${PRIVATE_KEY}
 
-			write_hash_rsa $TARGET_DIR/${output_file} \
-					/dev/null $TARGET_DIR/${input_file}.sig
-		fi
+		write_hash_rsa $TARGET_DIR/${output_file} \
+				/dev/null $TARGET_DIR/${input_file}.sig
 
 		rm -rf $TARGET_DIR/${input_file}.pub
 		rm -rf $TARGET_DIR/${input_file}.sig
 		rm -rf $TARGET_DIR/${hash_file}
+	fi
+}
+
+gen_nexell_image_mon()
+{
+	local chip_name=$(echo -n ${CHIP_NAME} | awk '{print toupper($0)}')
+	if [ "$CHIP_NAME" == "s5p4418" ]; then
+		nsih_name=raptor-sd.txt
+		input_file=bl_mon.bin
+		output_file=bl_mon.img
+		hash_file=bl_mon.bin.hash
+
+		$UBOOT_DIR/output/tools/nexell/SECURE_BINGEN \
+			-c $chip_name -t 3rdboot \
+			-n $UBOOT_DIR/tools/nexell/nsih/${nsih_name} \
+			-i $PREBUILT_DIR/${input_file} \
+			-o $PREBUILT_DIR/${output_file} \
+			-l 0xffff0200 -e 0xffff0200
+
+		gen_hash_rsa $PREBUILT_DIR/${input_file} \
+				$PREBUILT_DIR/${hash_file} ${PRIVATE_KEY}
+
+		write_hash_rsa $PREBUILT_DIR/${output_file} \
+				/dev/null $PREBUILT_DIR/${input_file}.sig
+
+		rm -rf $PREBUILT_DIR/${input_file}.pub
+		rm -rf $PREBUILT_DIR/${input_file}.sig
+		rm -rf $PREBUILT_DIR/${hash_file}
 	fi
 }
 
@@ -206,12 +220,32 @@ gen_nexell_image_secure()
 		write_hash_rsa $PREBUILT_DIR/${output_file} \
 				/dev/null $PREBUILT_DIR/${input_file}.sig
 
+	else
+		if [ "$SECURE_OS" == "trustware" ]; then
+			nsih_name=raptor-trustware.txt
+		else
+			nsih_name=raptor-sd.txt
+		fi
+		input_file=secureos.bin
+		output_file=secureos.img
+		hash_file=secureos.bin.hash
+
+		$UBOOT_DIR/output/tools/nexell/SECURE_BINGEN \
+		-c $chip_name -t 3rdboot \
+		-n $UBOOT_DIR/tools/nexell/nsih/${nsih_name} \
+		-i $PREBUILT_DIR/${input_file} \
+		-o $PREBUILT_DIR/${output_file} \
+		-l 0xb0000000 -e 0xb0000000
+
+		gen_hash_rsa $PREBUILT_DIR/${input_file} \
+				$PREBUILT_DIR/${hash_file} ${PRIVATE_KEY}
+
+		write_hash_rsa $PREBUILT_DIR/${output_file} \
+				/dev/null $PREBUILT_DIR/${input_file}.sig
+	fi
 		rm -rf $PREBUILT_DIR/${input_file}.pub
 		rm -rf $PREBUILT_DIR/${input_file}.sig
 		rm -rf $PREBUILT_DIR/${hash_file}
-	else
-		return 0
-	fi
 }
 
 trap 'error ${LINENO} ${?}' ERR
@@ -241,7 +275,9 @@ gen_fip_image
 gen_nexell_image
 if [ "$SECURE_BOOT" == "enable" ]; then
 	gen_nexell_image_secure
+	gen_nexell_image_mon
 fi
+
 gen_version_info
 
 popd

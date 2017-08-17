@@ -85,11 +85,38 @@ then
 	BUILD_DATE=`date +"%Y%m%d.%H%M%S"`
 fi
 
+BOOT_SIZE_SECTOR=$((BOOT_SIZE << 11))
+MODULE_SIZE_SECTOR=$((MODULE_SIZE << 11))
+
 BOOT_START_SECTOR=$((SKIP_BOOT_SIZE << 11))
+BOOT_END_SECTOR=$(expr $BOOT_START_SECTOR + $BOOT_SIZE_SECTOR - 1)
+
 MODULE_START_OFFSET=$(expr $BOOT_SIZE + $SKIP_BOOT_SIZE)
-MODULE_START_SECTOR=$((MODULE_START_OFFSET << 11))
-ROOTFS_START_OFFSET=$(expr $MODULE_START_OFFSET + $MODULE_SIZE)
-ROOTFS_START_SECTOR=$((ROOTFS_START_OFFSET << 11))
+MODULE_START_SECTOR=$(expr $BOOT_END_SECTOR + 1)
+MODULE_END_SECTOR=$(expr $MODULE_START_SECTOR + $MODULE_SIZE_SECTOR - 1)
+
+ROOTFS_START_SECTOR=$(expr $MODULE_END_SECTOR + 1)
+
+#Partition For OTA
+EXT_PART_PAD=2048
+FLAG_START_SECTOR_OTA=$((SKIP_BOOT_SIZE << 11))
+FLAG_SIZE_SECTOR=$(expr 128 \* 2)
+FLAG_END_SECTOR_OTA=$(expr $FLAG_START_SECTOR_OTA + $FLAG_SIZE_SECTOR - 1)
+
+BOOT_START_SECTOR_OTA=$(expr $FLAG_END_SECTOR_OTA + 1)
+BOOT_END_SECTOR_OTA=$(expr $BOOT_START_SECTOR_OTA + $BOOT_SIZE_SECTOR - 1)
+
+BOOT0_START_SECTOR_OTA=$(expr $BOOT_END_SECTOR_OTA + 1)
+BOOT0_END_SECTOR_OTA=$(expr $BOOT0_START_SECTOR_OTA + $BOOT_SIZE_SECTOR - 1)
+
+EXT_START_SECTOR_OTA=$(expr $BOOT0_END_SECTOR_OTA + 1)
+MODULES_START_SECTOR_OTA=$(expr $EXT_START_SECTOR_OTA + $EXT_PART_PAD)
+MODULES_END_SECTOR_OTA=$(expr $MODULES_START_SECTOR_OTA + $MODULE_SIZE_SECTOR - 1)
+
+MODULES0_START_SECTOR_OTA=$(expr $MODULES_END_SECTOR_OTA + $EXT_PART_PAD + 1)
+MODULES0_END_SECTOR_OTA=$(expr $MODULES0_START_SECTOR_OTA + $MODULE_SIZE_SECTOR - 1)
+
+ROOTFS_START_SECTOR_OTA=$(expr $MODULES0_END_SECTOR_OTA + $EXT_PART_PAD + 1)
 
 repartition() {
 fdisk $1 << __EOF__
@@ -97,18 +124,59 @@ n
 p
 1
 $BOOT_START_SECTOR
-+${BOOT_SIZE}M
+$BOOT_END_SECTOR
 
 n
 p
 2
-${MODULE_START_SECTOR}
-+${MODULE_SIZE}M
+$MODULE_START_SECTOR
+$MODULE_END_SECTOR
 
 n
 p
 3
-${ROOTFS_START_SECTOR}
+$ROOTFS_START_SECTOR
+
+w
+__EOF__
+}
+
+repartition_ota() {
+fdisk $1 << __EOF__
+n
+p
+1
+$FLAG_START_SECTOR_OTA
+$FLAG_END_SECTOR_OTA
+
+n
+p
+2
+$BOOT_START_SECTOR_OTA
+$BOOT_END_SECTOR_OTA
+
+n
+p
+3
+$BOOT0_START_SECTOR_OTA
+$BOOT0_END_SECTOR_OTA
+
+n
+e
+$EXT_START_SECTOR_OTA
+
+
+n
+$MODULES_START_SECTOR_OTA
+$MODULES_END_SECTOR_OTA
+
+n
+$MODULES0_START_SECTOR_OTA
+$MODULES0_END_SECTOR_OTA
+
+n
+$ROOTFS_START_SECTOR_OTA
+
 
 w
 __EOF__
@@ -127,14 +195,23 @@ gen_image()
 	fi
 
 	ROOTFS_SZ=$((ROOTFS_SIZE >> 20))
-	TOTAL_SZ=`expr $ROOTFS_SZ + $BOOT_SIZE + $MODULE_SIZE + 2 + $ROOTFS_GAIN`
+	if [ "$OTA" == "true" ] && [ "$SDBOOT_IMAGE" == "true" ]; then
+		TOTAL_SZ=`expr $BOOT_SIZE + $BOOT_SIZE + $MODULE_SIZE + $MODULE_SIZE + $ROOTFS_SZ + $ROOTFS_GAIN + 2`
 
-	dd if=/dev/zero of=$IMG_NAME bs=1M count=$TOTAL_SZ
-	dd conv=notrunc if=$TARGET_DIR/$SD_BOOT of=$IMG_NAME bs=512
-	sync
+		dd if=/dev/zero of=$IMG_NAME bs=1M count=$TOTAL_SZ
+		dd conv=notrunc if=$TARGET_DIR/$SD_BOOT of=$IMG_NAME bs=512
+		sync
 
-	repartition $IMG_NAME
+		repartition_ota $IMG_NAME
+	else
+		TOTAL_SZ=`expr $ROOTFS_SZ + $BOOT_SIZE + $MODULE_SIZE + 2 + $ROOTFS_GAIN`
 
+		dd if=/dev/zero of=$IMG_NAME bs=1M count=$TOTAL_SZ
+		dd conv=notrunc if=$TARGET_DIR/$SD_BOOT of=$IMG_NAME bs=512
+		sync
+
+		repartition $IMG_NAME
+	fi
 	sync;sync;sync
 }
 
@@ -142,28 +219,38 @@ install_output()
 {
 	sudo kpartx -a -v ${IMG_NAME}
 
-	LOOP_DEV1=`sudo kpartx -l ${IMG_NAME} | awk '{ print $1 }' | awk 'NR == 1'`
-	LOOP_DEV2=`sudo kpartx -l ${IMG_NAME} | awk '{ print $1 }' | awk 'NR == 3'`
+	if [ "$OTA" == "true" ] && [ "$SDBOOT_IMAGE" == "true" ]; then
+		LOOP_ROOTFS=`sudo kpartx -l ${IMG_NAME} | awk '{ print $1 }' | awk 'NR == 7'`
 
-	sudo su -c "dd conv=notrunc if=$TARGET_DIR/boot.img of=$IMG_NAME \
-		bs=1M seek=$SKIP_BOOT_SIZE count=$BOOT_SIZE"
+		sudo su -c "dd conv=notrunc if=$TARGET_DIR/flag.img of=$IMG_NAME \
+			bs=512 seek=$FLAG_START_SECTOR_OTA count=$FLAG_SIZE_SECTOR"
+		sudo su -c "dd conv=notrunc if=$TARGET_DIR/boot.img of=$IMG_NAME \
+			bs=512 seek=$BOOT_START_SECTOR_OTA count=$BOOT_SIZE_SECTOR"
+		sudo su -c "dd conv=notrunc if=$TARGET_DIR/modules.img of=$IMG_NAME \
+			bs=512 seek=$MODULES_START_SECTOR_OTA count=$MODULE_SIZE_SECTOR"
+	else
+		LOOP_ROOTFS=`sudo kpartx -l ${IMG_NAME} | awk '{ print $1 }' | awk 'NR == 3'`
+		sudo su -c "dd conv=notrunc if=$TARGET_DIR/boot.img of=$IMG_NAME 	\
+			bs=1M seek=$SKIP_BOOT_SIZE count=$BOOT_SIZE"
 
-	sudo su -c "dd conv=notrunc if=$TARGET_DIR/modules.img of=$IMG_NAME \
-		bs=1M seek=$MODULE_START_OFFSET count=$MODULE_SIZE"
+		sudo su -c "dd conv=notrunc if=$TARGET_DIR/modules.img of=$IMG_NAME	\
+			bs=1M seek=$MODULE_START_OFFSET count=$MODULE_SIZE"
+	fi
 
-	check_exist /dev/mapper/${LOOP_DEV2}
+	check_exist /dev/mapper/${LOOP_ROOTFS}
 
-	sudo su -c "mkfs.ext4 -F -b 4096 -L rootfs /dev/mapper/${LOOP_DEV2}"
+	sudo su -c "mkfs.ext4 -F -b 4096 -L rootfs /dev/mapper/${LOOP_ROOTFS}"
 
 	test -d mnt || mkdir mnt
 
-	sudo su -c "mount /dev/mapper/${LOOP_DEV2} mnt"
+	sudo su -c "mount /dev/mapper/${LOOP_ROOTFS} mnt"
 	sync
 
 	if $SDBOOT_IMAGE; then
 		sudo su -c "tar xf $TARGET_DIR/rootfs.tar.gz -C mnt"
 		sudo su -c "sed -i 's/mmcblk0p/mmcblk1p/g' mnt/etc/fstab"
 		sudo su -c "cp artik_release mnt/etc/"
+		sudo su -c "touch mnt/.need_sd_resize"
 	else
 		case "$CHIP_NAME" in
 		s5p6818)
@@ -175,6 +262,9 @@ install_output()
 			;;
 		s5p4418)
 			sudo su -c "cp $TARGET_DIR/bl1-emmcboot.img mnt"
+			sudo su -c "cp $TARGET_DIR/loader-emmc.img mnt"
+			sudo su -c "cp $TARGET_DIR/bl_mon.img mnt"
+			sudo su -c "cp $TARGET_DIR/secureos.img mnt"
 			sudo su -c "cp $TARGET_DIR/bootloader.img mnt"
 			sudo su -c "cp $TARGET_DIR/partmap_emmc.txt mnt"
 			;;
@@ -185,6 +275,9 @@ install_output()
 			sudo su -c "cp $TARGET_DIR/tzsw.bin mnt"
 			;;
 		esac
+		if [ "$OTA" == "true" ]; then
+			sudo su -c "cp $TARGET_DIR/flag.img mnt"
+		fi
 
 		sudo su -c "cp $TARGET_DIR/params.bin mnt"
 		sudo su -c "cp $TARGET_DIR/boot.img mnt"

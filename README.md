@@ -73,10 +73,10 @@ boot-firmwares-artik710
 ```
 mkdir artik710
 cd artik710
-git clone https://github.com/SamsungARTIK/linux-artik.git -b A710_os_2.0.0
-git clone https://github.com/SamsungARTIK/u-boot-artik.git -b A710_os_2.0.0
-git clone https://github.com/SamsungARTIK/build-artik.git -b A710_os_2.0.0
-git clone https://github.com/SamsungARTIK/boot-firmwares-artik710.git -b A710_os_2.0.0
+git clone https://github.com/SamsungARTIK/linux-artik.git -b A710_os_2.2.0
+git clone https://github.com/SamsungARTIK/u-boot-artik.git -b A710_os_2.2.0
+git clone https://github.com/SamsungARTIK/build-artik.git -b A710_os_2.2.0
+git clone https://github.com/SamsungARTIK/boot-firmwares-artik710.git -b A710_os_2.2.0
 cd build-artik
 ```
 + ARTIK530>
@@ -89,10 +89,10 @@ boot-firmwares-artik530
 ```
 mkdir artik530
 cd artik530
-git clone https://github.com/SamsungARTIK/linux-artik.git -b A530_os_1.0.0
-git clone https://github.com/SamsungARTIK/u-boot-artik.git -b A530_os_1.0.0
-git clone https://github.com/SamsungARTIK/build-artik.git -b A530_os_1.0.0
-git clone https://github.com/SamsungARTIK/boot-firmwares-artik530.git -b A530_os_1.0.0
+git clone https://github.com/SamsungARTIK/linux-artik.git -b A530_os_2.1.0
+git clone https://github.com/SamsungARTIK/u-boot-artik.git -b A530_os_2.1.0
+git clone https://github.com/SamsungARTIK/build-artik.git -b A530_os_2.1.0
+git clone https://github.com/SamsungARTIK/boot-firmwares-artik530.git -b A530_os_2.1.0
 cd build-artik
 ```
 
@@ -102,14 +102,14 @@ cd build-artik
 ./release.sh -c config/artik710.cfg
 ```
 
-The output will be 'output/images/artik710/YYYYMMDD.HHMMSS/artik710_sdfuse.img'
+The output will be 'output/images/artik710/YYYYMMDD.HHMMSS/artik710_sdfuse_UNRELEASED_XXX.img'
 
 + artik530
 ```
 ./release.sh -c config/artik530.cfg
 ```
 
-The output will be 'output/images/artik530/YYYYMMDD.HHMMSS/artik530_sdfuse.img'
+The output will be 'output/images/artik530/YYYYMMDD.HHMMSS/artik530_sdfuse_UNRELEASED_XXX.img'
 
 ### 3.3 Generate a sd bootable image(for SD Card Booting)
 + artik710
@@ -137,7 +137,7 @@ https://github.com/SamsungARTIK/fed-artik-tools
 ```
 mkdir artik710_full
 cd artik710_full
-repo init -u https://github.com/SamsungARTIK/manifest.git -b A710_os_2.0.0 -m artik710.xml
+repo init -u https://github.com/SamsungARTIK/manifest.git -b A710_os_2.2.0 -m artik710.xml
 repo sync
 ```
 
@@ -145,7 +145,7 @@ repo sync
 ```
 mkdir artik530_full
 cd artik530_full
-repo init -u https://github.com/SamsungARTIK/manifest.git -b A530_os_1.0.0 -m artik530.xml
+repo init -u https://github.com/SamsungARTIK/manifest.git -b A530_os_2.1.0 -m artik530.xml
 repo sync
 ```
 

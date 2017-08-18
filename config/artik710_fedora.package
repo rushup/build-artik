@@ -17,6 +17,7 @@ wpa_supplicant
 artik-repos
 sbc
 bluez
+artik-ota
 artik-plugin
 artik-plugin-artik710
 mqttsn_gateway

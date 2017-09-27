@@ -104,26 +104,6 @@ gen_fip_image()
 	fi
 }
 
-gen_hash_rsa() {
-	local in_img=${1}
-	local hash_name=${2}
-	local private_key=${3}
-
-	${RSA_SIGN_TOOL} ${private_key} ${in_img}
-
-	# <output>
-	#     ${input_file}.sig
-	#     ${input_file}.pub
-}
-
-write_hash_rsa() {
-	img=${1}
-	pub=${2}
-	sig=${3}
-
-	dd if=${pub} of=${img} conv=notrunc ibs=256 count=1 obs=256 seek=2
-	dd if=${sig} of=${img} conv=notrunc ibs=256 count=1 obs=256 seek=3
-}
 
 gen_nexell_image()
 {
@@ -157,16 +137,8 @@ gen_nexell_image()
 		-l $FIP_LOAD_ADDR -e ${launch_addr}
 
 
-	if [ "$SECURE_BOOT" == "enable" ]; then
-		gen_hash_rsa $TARGET_DIR/${input_file} \
-				$TARGET_DIR/${hash_file} ${PRIVATE_KEY}
-
-		write_hash_rsa $TARGET_DIR/${output_file} \
-				/dev/null $TARGET_DIR/${input_file}.sig
-
-		rm -rf $TARGET_DIR/${input_file}.pub
-		rm -rf $TARGET_DIR/${input_file}.sig
-		rm -rf $TARGET_DIR/${hash_file}
+	if [ "$SECURE_BOOT" == "enable" ] && [ "$RSA_SIGN_TOOL" != "" ] ; then
+		${RSA_SIGN_TOOL} -sign $TARGET_DIR/${output_file}
 	fi
 }
 
@@ -174,27 +146,11 @@ gen_nexell_image_mon()
 {
 	local chip_name=$(echo -n ${CHIP_NAME} | awk '{print toupper($0)}')
 	if [ "$CHIP_NAME" == "s5p4418" ]; then
-		nsih_name=raptor-sd.txt
-		input_file=bl_mon.bin
-		output_file=bl_mon.img
-		hash_file=bl_mon.bin.hash
+		input_file=bl_mon.img
 
-		$UBOOT_DIR/output/tools/nexell/SECURE_BINGEN \
-			-c $chip_name -t 3rdboot \
-			-n $UBOOT_DIR/tools/nexell/nsih/${nsih_name} \
-			-i $PREBUILT_DIR/${input_file} \
-			-o $PREBUILT_DIR/${output_file} \
-			-l 0xffff0200 -e 0xffff0200
-
-		gen_hash_rsa $PREBUILT_DIR/${input_file} \
-				$PREBUILT_DIR/${hash_file} ${PRIVATE_KEY}
-
-		write_hash_rsa $PREBUILT_DIR/${output_file} \
-				/dev/null $PREBUILT_DIR/${input_file}.sig
-
-		rm -rf $PREBUILT_DIR/${input_file}.pub
-		rm -rf $PREBUILT_DIR/${input_file}.sig
-		rm -rf $PREBUILT_DIR/${hash_file}
+		if [ "$RSA_SIGN_TOOL" != "" ]; then
+			${RSA_SIGN_TOOL} -sign $PREBUILT_DIR/${input_file}
+		fi
 	fi
 }
 
@@ -202,50 +158,14 @@ gen_nexell_image_secure()
 {
 	local chip_name=$(echo -n ${CHIP_NAME} | awk '{print toupper($0)}')
 	if [ "$CHIP_NAME" == "s5p6818" ]; then
-		nsih_name=raptor-64.txt
-		input_file=fip-secure.bin
-		output_file=fip-secure.img
-		hash_file=fip-secure.bin.hash
-
-		$UBOOT_DIR/output/tools/nexell/SECURE_BINGEN \
-			-c $chip_name -t 3rdboot \
-			-n $UBOOT_DIR/tools/nexell/nsih/${nsih_name} \
-			-i $PREBUILT_DIR/${input_file} \
-			-o $PREBUILT_DIR/${output_file} \
-			-l $FIP_SEC_LOAD_ADDR -e 0x00000000
-
-        gen_hash_rsa $PREBUILT_DIR/${input_file} \
-				$PREBUILT_DIR/${hash_file} ${PRIVATE_KEY}
-
-		write_hash_rsa $PREBUILT_DIR/${output_file} \
-				/dev/null $PREBUILT_DIR/${input_file}.sig
-
+		input_file=fip-secure.img
 	else
-		if [ "$SECURE_OS" == "trustware" ]; then
-			nsih_name=raptor-trustware.txt
-		else
-			nsih_name=raptor-sd.txt
-		fi
-		input_file=secureos.bin
-		output_file=secureos.img
-		hash_file=secureos.bin.hash
-
-		$UBOOT_DIR/output/tools/nexell/SECURE_BINGEN \
-		-c $chip_name -t 3rdboot \
-		-n $UBOOT_DIR/tools/nexell/nsih/${nsih_name} \
-		-i $PREBUILT_DIR/${input_file} \
-		-o $PREBUILT_DIR/${output_file} \
-		-l 0xb0000000 -e 0xb0000000
-
-		gen_hash_rsa $PREBUILT_DIR/${input_file} \
-				$PREBUILT_DIR/${hash_file} ${PRIVATE_KEY}
-
-		write_hash_rsa $PREBUILT_DIR/${output_file} \
-				/dev/null $PREBUILT_DIR/${input_file}.sig
+		input_file=secureos.img
 	fi
-		rm -rf $PREBUILT_DIR/${input_file}.pub
-		rm -rf $PREBUILT_DIR/${input_file}.sig
-		rm -rf $PREBUILT_DIR/${hash_file}
+
+	if [ "$RSA_SIGN_TOOL" != "" ]; then
+		${RSA_SIGN_TOOL} -sign $PREBUILT_DIR/${input_file}
+	fi
 }
 
 trap 'error ${LINENO} ${?}' ERR

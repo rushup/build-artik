@@ -275,6 +275,12 @@ else
 	cp flash_all_by_fastboot.sh $TARGET_DIR
 fi
 
+if [ -e $PREBUILT_DIR/usb-downloader ]; then
+	cp $PREBUILT_DIR/usb-downloader $TARGET_DIR
+	cp $PREBUILT_DIR/nsih-${TARGET_BOARD}.txt $TARGET_DIR
+	cp $PREBUILT_DIR/usb_recovery.sh $TARGET_DIR
+fi
+
 cp expand_rootfs.sh $TARGET_DIR
 
 if [ -e $PREBUILT_DIR/$TARGET_BOARD/u-boot-recovery.bin ]; then

@@ -25,7 +25,7 @@ ROOTFS_FILE=$(urlencode "$ROOTFS_FILE")
 
 if [ ! -f $PREBUILT_DIR/$ROOTFS_FILE ]; then
 	echo "Not found rootfs. Download it"
-	wget https://github.com/SamsungARTIK/fedora-spin-kickstarts/releases/download/${ROOTFS_TAG}/${ROOTFS_FILE} -O $PREBUILT_DIR/$ROOTFS_FILE
+	wget ${ROOTFS_BASE_URL}/${ROOTFS_TAG}/${ROOTFS_FILE} -O $PREBUILT_DIR/$ROOTFS_FILE
 fi
 
 while :
@@ -36,7 +36,7 @@ do
 	fi
 
 	echo "Mismatch MD5 hash. Just download again"
-	wget https://github.com/SamsungARTIK/fedora-spin-kickstarts/releases/download/${ROOTFS_TAG}/${ROOTFS_FILE} -O $PREBUILT_DIR/$ROOTFS_FILE
+	wget ${ROOTFS_BASE_URL}/${ROOTFS_TAG}/${ROOTFS_FILE} -O $PREBUILT_DIR/$ROOTFS_FILE
 
 	CHECK_COUNT=$((CHECK_COUNT + 1))
 

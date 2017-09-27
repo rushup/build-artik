@@ -116,13 +116,44 @@ fi
 
 fed-artik-creator $BUILD_CONF --copy-rpm-dir $KICKSTART_DIR/prebuilt
 
-if [ "$FEDORA_NAME" != "" ]; then
-	fed-artik-creator $BUILD_CONF --copy-kickstart-dir $KICKSTART_DIR \
-		--ks-file $KICKSTART_DIR/$KICKSTART_FILE -o $TARGET_DIR \
-		--output-file $FEDORA_NAME
-else
-	fed-artik-creator $BUILD_CONF --copy-kickstart-dir $KICKSTART_DIR \
-		--ks-file $KICKSTART_DIR/$KICKSTART_FILE -o $TARGET_DIR
+if [ "$FEDORA_NAME" == "" ]; then
+	KS_BASE=${KICKSTART_FILE##*/}
+	FEDORA_NAME=${KS_BASE%.*}-`date +"%Y%m%d%H%M%S"`
 fi
 
-echo "A new fedora image has been created"
+fed-artik-creator $BUILD_CONF --copy-kickstart-dir $KICKSTART_DIR \
+	--ks-file $KICKSTART_DIR/$KICKSTART_FILE -o $TARGET_DIR \
+	--output-file $FEDORA_NAME
+
+cat > $TARGET_DIR/install_sysroot.sh << __EOF__
+#!/bin/sh
+
+uudecode \$0
+read -r -p "Install Path: " INSTALL_PATH
+export INSTALL_PATH=\$(readlink -f "\$INSTALL_PATH")
+mkdir -p \$INSTALL_PATH/BUILDROOT
+sudo tar zxf $FEDORA_NAME.tar.gz -C \$INSTALL_PATH/BUILDROOT
+sudo rm -f $FEDORA_NAME.tar.gz
+
+cat > \$INSTALL_PATH/sysroot_env << __EOF__
+export PATH=:$PATH
+export PKG_CONFIG_SYSROOT_DIR=\$INSTALL_PATH/BUILDROOT
+export PKG_CONFIG_PATH=\$INSTALL_PATH/BUILDROOT/usr/lib/pkgconfig:\$INSTALL_PATH/BUILDROOT/usr/share/pkgconfig
+export CC="arm-linux-gnueabihf-gcc --sysroot=\$INSTALL_PATH/BUILDROOT"
+export LD="arm-linux-gnueabihf-ld --sysroot=\$INSTALL_PATH/BUILDROOT"
+export ARCH=arm
+export CROSS_COMPILE=arm-linux-gnueabihf-
+IN__EOF__
+
+echo "Sysroot in extracted on \$INSTALL_PATH/sysroot_env\""
+echo "Please run \"source \$INSTALL_PATH/sysroot_env\" before compile."
+
+exit
+__EOF__
+
+sed -i -e "s/IN__EOF__/__EOF__/g" $TARGET_DIR/install_sysroot.sh
+
+uuencode $TARGET_DIR/$FEDORA_NAME.tar.gz $FEDORA_NAME.tar.gz >> $TARGET_DIR/install_sysroot.sh
+chmod 755 $TARGET_DIR/install_sysroot.sh
+
+echo "A new fedora image for sysroot has been created"

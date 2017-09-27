@@ -191,8 +191,6 @@ if [ "$PORT" == "" ]; then
 	find_unused_port
 fi
 
-UBUNTU_PACKAGES=`cat $TARGET_PACKAGE`
-
 [ -d $DEST_DIR/debs ] || mkdir -p $DEST_DIR/debs
 
 if [ "$PREBUILT_REPO_DIR" != "" ]; then
@@ -204,6 +202,8 @@ start_local_server $DEST_DIR/debs $PORT
 pushd ../
 
 if ! $SKIP_BUILD; then
+	UBUNTU_PACKAGES=`cat $TARGET_PACKAGE`
+
 	for pkg in $UBUNTU_PACKAGES
 	do
 		build_package $pkg $DEST_DIR/debs

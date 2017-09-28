@@ -38,56 +38,35 @@ sudo apt-get install kpartx u-boot-tools gcc-arm-linux-gnueabihf gcc-aarch64-lin
 ```
 
 ### 3.2 Download BSP sources
-#### 3.2.1. Download through repo tool
-You can download source codes using repo tool. To install the repo tool,
-    https://source.android.com/source/downloading.html
 
-- ARTIK710
-
-```
-mkdir artik710
-cd artik710
-repo init -u https://github.com/SamsungARTIK/manifest.git -m artik710_bsp.xml
-repo sync
-```
-
-- ARTIK530
-
-```
-mkdir artik530
-cd artik530
-repo init -u https://github.com/SamsungARTIK/manifest.git -m artik530_bsp.xml
-repo sync
-```
-
-#### 3.2.2. clone the sources through git
+#### 3.2.1. clone the sources through git
 
 Please ensure u-boot-artik and linux-artik directory on top of the build-artik.
-- ARTIK710
+- KITRA710C
 	- u-boot-artik
 	- linux-artik
 	- build-artik
 	- boot-firmwares-artik710
 ```
-mkdir artik710
-cd artik710
-git clone https://github.com/SamsungARTIK/linux-artik.git -b A710_os_3.0.0
+mkdir kitra710c
+cd kitra710c
+git clone https://github.com/rushup/Kitra710C-kernel.git -b master --single-branch
 git clone https://github.com/SamsungARTIK/u-boot-artik.git -b A710_os_3.0.0
 git clone https://github.com/SamsungARTIK/build-artik.git -b A710_os_3.0.0
 git clone https://github.com/SamsungARTIK/boot-firmwares-artik710.git -b A710_os_3.0.0
 cd build-artik
 ```
 
-- ARTIK530
+- KITRA530
 	- u-boot-artik
 	- linux-artik
 	- build-artik
 	- boot-firmwares-artik530
 
 ```
-mkdir artik530
-cd artik530
-git clone https://github.com/SamsungARTIK/linux-artik.git -b A530_os_3.0.0
+mkdir kitra530
+cd kitra530
+git clone https://github.com/rushup/Kitra530-kernel.git -b master --single-branch
 git clone https://github.com/SamsungARTIK/u-boot-artik.git -b A530_os_3.0.0
 git clone https://github.com/SamsungARTIK/build-artik.git -b A530_os_3.0.0
 git clone https://github.com/SamsungARTIK/boot-firmwares-artik530.git -b A530_os_3.0.0
@@ -96,34 +75,34 @@ cd build-artik
 
 ### 3.3 Generate a sd fuse image(for eMMC recovery from sd card)
 
--	artik710
+-	kitra710C
 
 ```
-./release.sh -c config/artik710_ubuntu.cfg
+./release.sh -c config/kitra710C_ubuntu.cfg
 ```
 
 The output will be 'output/images/artik710/YYYYMMDD.HHMMSS/artik710_sdfuse_UNRELEASED_XXX.img'
 
--	artik530
+-	kitra530
 
 ```
-./release.sh -c config/artik530_ubuntu.cfg
+./release.sh -c config/kitra530_ubuntu.cfg
 ```
 
 The output will be 'output/images/artik530/YYYYMMDD.HHMMSS/artik530_sdfuse_UNRELEASED_XXX.img'
 
 ### 3.4 Generate a sd bootable image(for SD Card Booting)
 
--	artik710
+-	kitra710C
 
 ```
-./release.sh -c config/artik710_ubuntu.cfg -m
+./release.sh -c config/kitra710C_ubuntu.cfg -m
 ```
 
--	artik530
+-	kitra530
 
 ```
-./release.sh -c config/artik530_ubuntu.cfg -m
+./release.sh -c config/kitra530_ubuntu.cfg -m
 ```
 
 ---
@@ -132,62 +111,3 @@ The output will be 'output/images/artik530/YYYYMMDD.HHMMSS/artik530_sdfuse_UNREL
 
 Please refer https://developer.artik.io/documentation/updating-artik-image.html
 
----
-
-### 5. Full build guide
-
-This will require long time to make a ubuntu rootfs. You'll require to install sbuild/live buils system. Please refer "Environment set up for ubuntu package build" and "Environment set up for ubuntu rootfs build" from the [ubuntu-build-service](https://github.com/SamsungARTIK/ubuntu-build-service).
-
-#### 5.1. Clone whole source tree
-
-- artik710
-
-```
-mkdir artik710_full
-cd artik710_full
-repo init -u https://github.com/SamsungARTIK/manifest.git -b A710_os_3.0.0 -m artik710.xml
-repo sync
-```
-
-- artik530
-
-```
-mkdir artik530_full
-cd artik530_full
-repo init -u https://github.com/SamsungARTIK/manifest.git -b A530_os_3.0.0 -m artik530.xml
-repo sync
-```
-
-#### 5.2. Build with --full-build option
-
-- artik710
-
-```
-cd build-artik
-./release.sh -c config/artik710_ubuntu.cfg --full-build --ubuntu
-```
-
-- artik530
-
-```
-cd build-artik
-./release.sh -c config/artik530_ubuntu.cfg --full-build --ubuntu
-```
-
-#### 5.3. Build with --full-build and --skip-ubuntu-build option
-
-To skip building artik ubuntu packages such as bluez, wpa_supplicant, you can use --skip-ubuntu-build option along with --full-build. It will not build and get the packages from artik repository.
-
-- artik710
-
-```
-cd build-artik
-./release.sh -c config/artik710_ubuntu.cfg --full-build --ubuntu --skip-ubuntu-build
-```
-
-- artik530
-
-```
-cd build-artik
-./release.sh -c config/artik530_ubuntu.cfg --full-build --ubuntu --skip-ubuntu-build
-```

@@ -34,8 +34,22 @@ build()
 {
 	make distclean
 	make $KERNEL_DEFCONFIG
+	config=$(cat .config)
+
+	if [[ $config == *"CONFIG_KITRA530=y"* ]]; then
+		echo "Building for KItra530..."
+		make ARCH=arm CROSS_COMPILE=arm-linux-gnueabihf- dtbs EXTRAVERSION="-$BUILD_VERSION"
+
+		cp arch/arm/boot/dts/s5p4418-kitra530.dtb arch/arm/boot/dts/s5p4418-artik530-raptor-rev03.dtb
+	elif [[ $config == *"CONFIG_KITRA710C=y"* ]]; then
+		echo "Building for KItra710C..."
+		make ARCH=arm64 CROSS_COMPILE=aarch64-linux-gnu- dtbs EXTRAVERSION="-$BUILD_VERSION"
+
+		cp arch/arm64/boot/dts/nexell/s5p6818-kitra710C.dtb arch/arm64/boot/dts/nexell/s5p6818-artik710-raptor-rev03.dtb
+	else
+		make $BUILD_DTB EXTRAVERSION="-$BUILD_VERSION"
+	fi
 	make $KERNEL_IMAGE -j$JOBS EXTRAVERSION="-$BUILD_VERSION"
-	make $BUILD_DTB EXTRAVERSION="-$BUILD_VERSION"
 	make modules EXTRAVERSION="-$BUILD_VERSION" -j$JOBS
 }
 

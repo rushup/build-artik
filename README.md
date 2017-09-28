@@ -33,6 +33,7 @@ This 'build-artik' repository helps to create an ARTIK sd fuse image which can d
 ---
 ## 3. Build guide
 ### 3.1 Install packages
+
 ```
 sudo apt-get install kpartx u-boot-tools gcc-arm-linux-gnueabihf gcc-aarch64-linux-gnu device-tree-compiler
 ```
@@ -52,7 +53,7 @@ mkdir kitra710c
 cd kitra710c
 git clone https://github.com/rushup/Kitra710C-kernel.git -b master --single-branch
 git clone https://github.com/SamsungARTIK/u-boot-artik.git -b A710_os_3.0.0
-git clone https://github.com/SamsungARTIK/build-artik.git -b A710_os_3.0.0
+git clone https://github.com/rushup/build-artik.git -b A710_os_3.0.0
 git clone https://github.com/SamsungARTIK/boot-firmwares-artik710.git -b A710_os_3.0.0
 cd build-artik
 ```
@@ -68,7 +69,7 @@ mkdir kitra530
 cd kitra530
 git clone https://github.com/rushup/Kitra530-kernel.git -b master --single-branch
 git clone https://github.com/SamsungARTIK/u-boot-artik.git -b A530_os_3.0.0
-git clone https://github.com/SamsungARTIK/build-artik.git -b A530_os_3.0.0
+git clone https://github.com/rushup/build-artik.git -b A530_os_3.0.0
 git clone https://github.com/SamsungARTIK/boot-firmwares-artik530.git -b A530_os_3.0.0
 cd build-artik
 ```

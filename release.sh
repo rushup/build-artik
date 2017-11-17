@@ -15,6 +15,8 @@ PREBUILT_VBOOT_DIR=
 PREBUILT_REPO_OPT=
 DEPLOY=false
 OS_NAME=fedora
+KMS_PREBUILT_DIR=false
+KMS_TARGET_DIR=false
 
 print_usage()
 {
@@ -37,6 +39,8 @@ print_usage()
 	echo "--use-prebuilt-repo	Use prebuilt repository"
 	echo "--skip-ubuntu-build	Skip ubuntu build"
 	echo "--prebuilt-vboot	Specify prebuilt directory path for vboot"
+	echo "--kms-prebuilt-dir	Signed binaries directory"
+	echo "--kms-target-dir			Previous output directory"
 	echo "--deploy-all	Deploy release"
 	exit 0
 }
@@ -109,6 +113,12 @@ parse_options()
 			--prebuilt-vboot)
 				PREBUILT_VBOOT_DIR=`readlink -e "$2"`
 				shift ;;
+			--kms-prebuilt-dir)
+				KMS_PREBUILT_DIR=`readlink -e "$2"`
+				shift ;;
+			--kms-target-dir)
+				KMS_TARGET_DIR=`readlink -e "$2"`
+				shift ;;
 			--deploy-all)
 				DEPLOY=true
 				shift ;;
@@ -119,6 +129,44 @@ parse_options()
 				shift ;;
 		esac
 	done
+}
+
+check_restrictive_pkg()
+{
+	if [ "${TARGET_BOARD}" == "artik530s" ] || [ "${TARGET_BOARD}" == "artik533s" ] || [ "${TARGET_BOARD}" == "artik710s" ]; then
+		if [ "$SECURE_PREBUILT_DIR" != "" ]; then
+			cp -f $SECURE_PREBUILT_DIR/${TARGET_BOARD}_codesigner $PREBUILT_DIR
+			cp -f $SECURE_PREBUILT_DIR/${SECURE_OS_FILE} $PREBUILT_DIR
+
+			test ! -d $UBUNTU_MODULE_DEB_DIR && mkdir -p $UBUNTU_MODULE_DEB_DIR
+			cp -f $SECURE_PREBUILT_DIR/debs/*.deb $UBUNTU_MODULE_DEB_DIR
+		fi
+		RESTRICTIVE_PKG_LIST=`cat config/${TARGET_BOARD}_secure.list`
+		for l in $RESTRICTIVE_PKG_LIST
+		do
+			if [ $FULL_BUILD ]; then
+				if [ ! -f $l ]; then
+					echo -e "ERROR: cannot find ${l}-\e[0m"
+					echo -e "Build process has been terminated since the mandatory security binaries do not exist in your source code.\e[0m"
+					echo -e "Please download those files from artik.io with SLA agreement to continue to build.\e[0m"
+					echo -e "Once you download those files, please locate them to the following path."
+					echo -e ""
+					echo -e "1. secureos.img or fip-secure.img\e[0m"
+					echo -e "   copy to ../boot-firmwares-${TARGET_BOARD}/\e[0m"
+					echo -e "2. ${TARGET_BOARD}_codesigner"
+					echo -e "   copy to ../boot-firmwares-${TARGET_BOARD}/\e[0m"
+					echo -e "3. deb files\e[0m"
+					echo -e "   copy to ../ubuntu-build-service/prebuilt/${ARCH}/${TARGET_BOARD}/\e[0m"
+
+					exit 1
+				fi
+			else
+				if [ ! -f $l ] && [ "${l##*.}" == "deb" ]; then
+					continue
+				fi
+			fi
+		done
+	fi
 }
 
 package_check()
@@ -171,6 +219,8 @@ then
 	. $CONFIG_FILE
 fi
 
+check_restrictive_pkg
+
 if [ "$BUILD_DATE" == "" ]; then
 	BUILD_DATE=`date +"%Y%m%d.%H%M%S"`
 fi
@@ -189,6 +239,8 @@ sudo ls > /dev/null 2>&1
 mkdir -p $TARGET_DIR
 
 gen_artik_release
+
+if [ "$KMS_PREBUILT_DIR" == "false" ]; then
 
 if [ "$PREBUILT_VBOOT_DIR" == "" ]; then
 	./build_uboot.sh
@@ -229,14 +281,19 @@ if $FULL_BUILD ; then
 		if [ "$BUILD_ARCH" == "arm" ]; then
 			BUILD_ARCH=armhf
 		fi
+		if [ "$UBUNTU_MODULE_DEB_DIR" != "" ]; then
+			PREBUILT_MODULE_OPT="--prebuilt-module-dir $UBUNTU_MODULE_DEB_DIR"
+		fi
 		UBUNTU_IMG_DIR=../ubuntu-build-service/xenial-${BUILD_ARCH}-${OS_TARGET_BOARD}
-		./build_ubuntu.sh -p config/${OS_TARGET_BOARD}_ubuntu.package \
+		./build_ubuntu.sh -p ${UBUNTU_PACKAGE_FILE} \
 			--ubuntu-name $OS_OUTPUT_NAME \
 			$PREBUILT_REPO_OPT \
+			$PREBUILT_MODULE_OPT \
 			--arch $BUILD_ARCH --chroot xenial-amd64-${BUILD_ARCH} \
 			--dest-dir $TARGET_DIR $SKIP_UBUNTU_BUILD \
 			--prebuilt-dir ../ubuntu-build-service/prebuilt/$BUILD_ARCH \
-			--img-dir $UBUNTU_IMG_DIR
+			--img-dir $UBUNTU_IMG_DIR \
+			-b ${BUILD_TARGET}
 	else
 		if [ "$FEDORA_PREBUILT_RPM_DIR" != "" ]; then
 			PREBUILD_ADD_CMD="-r $FEDORA_PREBUILT_RPM_DIR"
@@ -295,3 +352,14 @@ ls -al $TARGET_DIR
 
 echo "ARTIK release information"
 cat $TARGET_DIR/artik_release
+
+else
+	export TARGET_DIR=$KMS_TARGET_DIR
+
+	test ! -d $KMS_TARGET_DIR/signed && mkdir $KMS_TARGET_DIR/signed
+	./mksdboot_kms.sh --kms-prebuilt-dir $KMS_PREBUILT_DIR --kms-target-dir $KMS_TARGET_DIR/signed
+	./mksdfuse_kms.sh --kms-prebuilt-dir $KMS_PREBUILT_DIR --kms-target-dir $KMS_TARGET_DIR/signed
+	./mksdfuse_kms.sh -m --kms-prebuilt-dir $KMS_PREBUILT_DIR --kms-target-dir $KMS_TARGET_DIR/signed
+
+	mv $TARGET_DIR/${TARGET_BOARD}_kms_sd*.img $KMS_TARGET_DIR/signed
+fi

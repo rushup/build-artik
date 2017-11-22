@@ -193,7 +193,7 @@ find_unused_port()
 
 restrictive_pkg_check()
 {
-	if [ "$SECURE_PREBUILT_DIR/debs" != "" ]; then
+	if [ -d "$SECURE_PREBUILT_DIR/debs" ]; then
 		cp -f $SECURE_PREBUILT_DIR/debs/*.deb $DEST_DIR/debs
 	fi
 	if [ "${TARGET_BOARD}" == "artik530s" ] || [ "${TARGET_BOARD}" == "artik533s" ] || [ "${TARGET_BOARD}" == "artik710s" ]; then

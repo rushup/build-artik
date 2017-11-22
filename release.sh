@@ -134,7 +134,7 @@ parse_options()
 check_restrictive_pkg()
 {
 	if [ "${TARGET_BOARD}" == "artik530s" ] || [ "${TARGET_BOARD}" == "artik533s" ] || [ "${TARGET_BOARD}" == "artik710s" ]; then
-		if [ "$SECURE_PREBUILT_DIR" != "" ]; then
+		if [ -d "$SECURE_PREBUILT_DIR" ]; then
 			cp -f $SECURE_PREBUILT_DIR/${TARGET_BOARD}_codesigner $PREBUILT_DIR
 			cp -f $SECURE_PREBUILT_DIR/${SECURE_OS_FILE} $PREBUILT_DIR
 
@@ -146,7 +146,7 @@ check_restrictive_pkg()
 		do
 			if [ $FULL_BUILD ]; then
 				if [ ! -f $l ]; then
-					echo -e "ERROR: cannot find ${l}-\e[0m"
+					echo -e "ERROR: cannot find ${l}\e[0m"
 					echo -e "Build process has been terminated since the mandatory security binaries do not exist in your source code.\e[0m"
 					echo -e "Please download those files from artik.io with SLA agreement to continue to build.\e[0m"
 					echo -e "Once you download those files, please locate them to the following path."

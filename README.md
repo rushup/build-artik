@@ -60,7 +60,10 @@ cd artik710s
 repo init -u https://github.com/SamsungARTIK/manifest.git -m artik710s_bsp.xml
 repo sync
 ```
-secure-firmwares-artik710s (Download from https://developer.artik.io/downloads/artik-710s/download)
+- Security Binaries for artik710s (Download from https://developer.artik.io/downloads/artik-710s/download)
+	- fip-secure.img: copy to ../boot-firmwares-artik710s
+	- artik710s_codesigner: copy to ../boot-firmwares-artik710s
+	- deb files: copy to ../ubuntu-build-service/prebuilt/arm64/artik710s
 
 - ARTIK530
 ```
@@ -77,7 +80,10 @@ cd artik530s
 repo init -u https://github.com/SamsungARTIK/manifest.git -m artik530s_bsp.xml
 repo sync
 ```
-secure-firmwares-artik530s (Download from https://developer.artik.io/downloads/artik-530s/download)
+- Security Binaries for artik530s (Download from https://developer.artik.io/downloads/artik-530s/download)
+	- secureos.img: copy to ../boot-firmwares-artik530s
+	- artik530s_codesigner: copy to ../boot-firmwares-artik530s
+	- deb files: copy to ../ubuntu-build-service/prebuilt/armhf/artik530s
 
 - ARTIK533S
 ```
@@ -86,7 +92,10 @@ cd artik533s
 repo init -u https://github.com/SamsungARTIK/manifest.git -m artik533s_bsp.xml
 repo sync
 ```
-secure-firmwares-artik533s (Download from https://developer.artik.io/downloads/artik-533s/download)
+- Security Binaries for artik533s (Download from https://developer.artik.io/downloads/artik-533s/download)
+	- secureos.img: copy to ../boot-firmwares-artik533s
+	- artik533s_codesigner: copy to ../boot-firmwares-artik533s
+	- deb files: copy to ../ubuntu-build-service/prebuilt/armhf/artik533s
 
 #### 3.2.2. clone the sources through git
 
@@ -111,7 +120,10 @@ cd build-artik
 	- linux-artik
 	- build-artik
 	- boot-firmwares-artik710s
-	- secure-firmwares-artik710s (Download from https://developer.artik.io/downloads/artik-710s/download)
+	- Security Binaries for artik710s (Download from https://developer.artik.io/downloads/artik-710s/download)
+		- fip-secure.img: copy to ../boot-firmwares-artik710s
+		- artik710s_codesigner: copy to ../boot-firmwares-artik710s
+		- deb files: copy to ../ubuntu-build-service/prebuilt/arm64/artik710s
 ```
 mkdir artik710s
 cd artik710s
@@ -143,7 +155,10 @@ cd build-artik
 	- linux-artik
 	- build-artik
 	- boot-firmwares-artik530s
-	- secure-firmwares-artik530s (Download from https://developer.artik.io/downloads/artik-530s/download)
+	- Security Binaries for artik530s (Download from https://developer.artik.io/downloads/artik-530s/download)
+		- secureos.img: copy to ../boot-firmwares-artik530s
+		- artik530s_codesigner: copy to ../boot-firmwares-artik530s
+		- deb files: copy to ../ubuntu-build-service/prebuilt/armhf/artik530s
 
 ```
 mkdir artik530s
@@ -160,7 +175,10 @@ cd build-artik
 	- linux-artik
 	- build-artik
 	- boot-firmwares-artik533s
-	- secure-firmwares-artik533s (Download from https://developer.artik.io/downloads/artik-533s/download)
+	- Security Binaries for artik533s (Download from https://developer.artik.io/downloads/artik-533s/download)
+		- secureos.img: copy to ../boot-firmwares-artik533s
+		- artik533s_codesigner: copy to ../boot-firmwares-artik533s
+		- deb files: copy to ../ubuntu-build-service/prebuilt/armhf/artik533s
 
 ```
 mkdir artik533s

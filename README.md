@@ -264,6 +264,29 @@ The output will be 'output/images/artik533s/YYYYMMDD.HHMMSS/artik533s_sdfuse_UNR
 ./release.sh -c config/artik533s_ubuntu.cfg -m
 ```
 
+### 3.5 Install security deb packages which were downloaded from artik.io
+
+-	artik530s
+	- copy *.deb files on the target device. (Download from https://developer.artik.io/downloads/artik-530s/download)
+
+```
+dpkg -i libsee-linux-trustware_0.1.6-0_armhf.deb security-b2b-artik530s_0.1.4-0_armhf.deb
+```
+
+-	artik533s
+	- copy *.deb files on the target device. (Download from https://developer.artik.io/downloads/artik-533s/download)
+
+```
+dpkg -i libsee-linux-trustware_0.1.6-0_armhf.deb security-b2b-artik533s_0.1.0-0_armhf.deb
+```
+
+-	artik710s
+	- copy *.deb files on the target device. (Download from https://developer.artik.io/downloads/artik-710s/download)
+
+```
+dpkg -i libsee-linux-trustware_0.1.6-0_arm64.deb security-b2b-artik710s_0.1.1-0_arm64.deb
+```
+
 ---
 
 ### 4. Install guide

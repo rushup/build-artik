@@ -63,7 +63,6 @@ repo sync
 - Security Binaries for artik710s (Download from https://developer.artik.io/downloads/artik-710s/download)
 	- fip-secure.img: copy to ../boot-firmwares-artik710s
 	- artik710s_codesigner: copy to ../boot-firmwares-artik710s
-	- deb files: copy to ../ubuntu-build-service/prebuilt/arm64/artik710s
 
 - ARTIK530
 ```
@@ -83,7 +82,6 @@ repo sync
 - Security Binaries for artik530s (Download from https://developer.artik.io/downloads/artik-530s/download)
 	- secureos.img: copy to ../boot-firmwares-artik530s
 	- artik530s_codesigner: copy to ../boot-firmwares-artik530s
-	- deb files: copy to ../ubuntu-build-service/prebuilt/armhf/artik530s
 
 - ARTIK530s 1G (ARTIK533s)
 ```
@@ -95,7 +93,6 @@ repo sync
 - Security Binaries for artik530s 1G (artik533s) (Download from https://developer.artik.io/downloads/artik-533s/download)
 	- secureos.img: copy to ../boot-firmwares-artik533s
 	- artik533s_codesigner: copy to ../boot-firmwares-artik533s
-	- deb files: copy to ../ubuntu-build-service/prebuilt/armhf/artik533s
 
 #### 3.2.2. clone the sources through git
 
@@ -123,7 +120,7 @@ cd build-artik
 	- Security Binaries for artik710s (Download from https://developer.artik.io/downloads/artik-710s/download)
 		- fip-secure.img: copy to ../boot-firmwares-artik710s
 		- artik710s_codesigner: copy to ../boot-firmwares-artik710s
-		- deb files: copy to ../ubuntu-build-service/prebuilt/arm64/artik710s
+
 ```
 mkdir artik710s
 cd artik710s
@@ -158,7 +155,6 @@ cd build-artik
 	- Security Binaries for artik530s (Download from https://developer.artik.io/downloads/artik-530s/download)
 		- secureos.img: copy to ../boot-firmwares-artik530s
 		- artik530s_codesigner: copy to ../boot-firmwares-artik530s
-		- deb files: copy to ../ubuntu-build-service/prebuilt/armhf/artik530s
 
 ```
 mkdir artik530s
@@ -178,7 +174,6 @@ cd build-artik
 	- Security Binaries for artik530s 1G (artik533s) (Download from https://developer.artik.io/downloads/artik-533s/download)
 		- secureos.img: copy to ../boot-firmwares-artik533s
 		- artik533s_codesigner: copy to ../boot-firmwares-artik533s
-		- deb files: copy to ../ubuntu-build-service/prebuilt/armhf/artik533s
 
 ```
 mkdir artik533s
@@ -347,7 +342,10 @@ cd build-artik
 ```
 
 - artik710s
-Please download security packages from https://developer.artik.io/downloads/artik-710s/download and copy them to ../ubuntu-build-service/prebuilt/arm64/artik710s/ directory.
+	- Please download security binaries from https://developer.artik.io/downloads/artik-710s/download and copy them to following directories.
+		- fip-secure.img: copy to ../boot-firmwares-artik710s
+		- artik710s_codesigner: copy to ../boot-firmwares-artik710s
+		- deb files: copy to ../ubuntu-build-service/prebuilt/arm64/artik710s
 ```
 cd build-artik
 ./release.sh -c config/artik710s_ubuntu.cfg --full-build --ubuntu
@@ -361,14 +359,20 @@ cd build-artik
 ```
 
 - artik530s
-Please download security packages from https://developer.artik.io/downloads/artik-530s/download and copy them to ../ubuntu-build-service/prebuilt/armhf/artik530s/ directory.
+	- Please download security binaries from https://developer.artik.io/downloads/artik-530s/download and copy them to following directories.
+		- secureos.img: copy to ../boot-firmwares-artik530s
+		- artik530s_codesigner: copy to ../boot-firmwares-artik530s
+		- deb files: copy to ../ubuntu-build-service/prebuilt/armhf/artik530s
 ```
 cd build-artik
 ./release.sh -c config/artik530s_ubuntu.cfg --full-build --ubuntu
 ```
 
 - artik530s 1G (artik533s)
-Please download security packages from https://developer.artik.io/downloads/artik-533s/download and copy them to ../ubuntu-build-service/prebuilt/armhf/artik533s/ directory.
+	- Please download security binaries from https://developer.artik.io/downloads/artik-533s/download and copy them to following directories.
+		- secureos.img: copy to ../boot-firmwares-artik533s
+		- artik533s_codesigner: copy to ../boot-firmwares-artik533s
+		- deb files: copy to ../ubuntu-build-service/prebuilt/armhf/artik533s
 ```
 cd build-artik
 ./release.sh -c config/artik533s_ubuntu.cfg --full-build --ubuntu

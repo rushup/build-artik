@@ -131,38 +131,45 @@ parse_options()
 	done
 }
 
+print_not_found()
+{
+	echo -e "\e[1;31mERROR: cannot find ${1}\e[0m"
+	echo -e "\e[1;31mBuild process has been terminated since the mandatory security binaries do not exist in your source code.\e[0m"
+	echo -e "\e[1;31mPlease download those files from artik.io with SLA agreement to continue to build.\e[0m"
+	echo -e "\e[1;31mOnce you download those files, please locate them to the following path."
+	echo -e ""
+	echo -e "\e[1;31m1. secureos.img or fip-secure.img\e[0m"
+	echo -e "\e[1;31m   copy to ../boot-firmwares-${TARGET_BOARD}/\e[0m"
+	echo -e "\e[1;31m2. ${TARGET_BOARD}_codesigner"
+	echo -e "\e[1;31m   copy to ../boot-firmwares-${TARGET_BOARD}/\e[0m"
+	echo -e "\e[1;31m3. deb files\e[0m"
+	echo -e "\e[1;31m   copy to ../ubuntu-build-service/prebuilt/${ARCH}/${TARGET_BOARD}/\e[0m"
+}
+
 check_restrictive_pkg()
 {
 	if [ "${TARGET_BOARD}" == "artik530s" ] || [ "${TARGET_BOARD}" == "artik533s" ] || [ "${TARGET_BOARD}" == "artik710s" ]; then
+		test ! -d $UBUNTU_MODULE_DEB_DIR && mkdir -p $UBUNTU_MODULE_DEB_DIR
+
 		if [ -d "$SECURE_PREBUILT_DIR" ]; then
 			cp -f $SECURE_PREBUILT_DIR/${TARGET_BOARD}_codesigner $PREBUILT_DIR
 			cp -f $SECURE_PREBUILT_DIR/${SECURE_OS_FILE} $PREBUILT_DIR
-
-			test ! -d $UBUNTU_MODULE_DEB_DIR && mkdir -p $UBUNTU_MODULE_DEB_DIR
 			cp -f $SECURE_PREBUILT_DIR/debs/*.deb $UBUNTU_MODULE_DEB_DIR
 		fi
 		RESTRICTIVE_PKG_LIST=`cat config/${TARGET_BOARD}_secure.list`
 		for l in $RESTRICTIVE_PKG_LIST
 		do
-			if [ $FULL_BUILD ]; then
-				if [ ! -f $l ]; then
-					echo -e "ERROR: cannot find ${l}\e[0m"
-					echo -e "Build process has been terminated since the mandatory security binaries do not exist in your source code.\e[0m"
-					echo -e "Please download those files from artik.io with SLA agreement to continue to build.\e[0m"
-					echo -e "Once you download those files, please locate them to the following path."
-					echo -e ""
-					echo -e "1. secureos.img or fip-secure.img\e[0m"
-					echo -e "   copy to ../boot-firmwares-${TARGET_BOARD}/\e[0m"
-					echo -e "2. ${TARGET_BOARD}_codesigner"
-					echo -e "   copy to ../boot-firmwares-${TARGET_BOARD}/\e[0m"
-					echo -e "3. deb files\e[0m"
-					echo -e "   copy to ../ubuntu-build-service/prebuilt/${ARCH}/${TARGET_BOARD}/\e[0m"
-
+			if [ ! -f $l ]; then
+				if [ $FULL_BUILD ]; then
+					print_not_found $l
 					exit 1
-				fi
-			else
-				if [ ! -f $l ] && [ "${l##*.}" == "deb" ]; then
-					continue
+				else
+					if [ "${l##*.}" == "deb" ]; then
+						continue
+					else
+						print_not_found $l
+						exit 1
+					fi
 				fi
 			fi
 		done

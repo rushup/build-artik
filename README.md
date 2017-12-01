@@ -21,7 +21,7 @@ This 'build-artik' repository helps to create an ARTIK sd fuse image which can d
 	-	artik530.cfg: common.cfg + artik530 specific configurations
 	-	artik530_ubuntu.cfg: common.cfg + artik530 ubuntu specific configurations
 	-	artik530s_ubuntu.cfg: common.cfg + artik530s ubuntu specific configurations
-	-	artik533s_ubuntu.cfg: common.cfg + artik533s ubuntu specific configurations
+	-	artik533s_ubuntu.cfg: common.cfg + artik530s 1G (artik533s) ubuntu specific configurations
 -	prebuilt : prebuilt binaries for artik5 and artik10
 	-	artik10: early stage bootloaders of artik10
 -	build_uboot.sh: u-boot build script
@@ -85,14 +85,14 @@ repo sync
 	- artik530s_codesigner: copy to ../boot-firmwares-artik530s
 	- deb files: copy to ../ubuntu-build-service/prebuilt/armhf/artik530s
 
-- ARTIK533S
+- ARTIK530s 1G (ARTIK533s)
 ```
 mkdir artik533s
 cd artik533s
 repo init -u https://github.com/SamsungARTIK/manifest.git -m artik533s_bsp.xml
 repo sync
 ```
-- Security Binaries for artik533s (Download from https://developer.artik.io/downloads/artik-533s/download)
+- Security Binaries for artik530s 1G (artik533s) (Download from https://developer.artik.io/downloads/artik-533s/download)
 	- secureos.img: copy to ../boot-firmwares-artik533s
 	- artik533s_codesigner: copy to ../boot-firmwares-artik533s
 	- deb files: copy to ../ubuntu-build-service/prebuilt/armhf/artik533s
@@ -170,12 +170,12 @@ git clone https://github.com/SamsungARTIK/boot-firmwares-artik530s.git -b A530s_
 cd build-artik
 ```
 
-- ARTIK533S
+- ARTIK530s 1G (ARTIK533s)
 	- u-boot-artik
 	- linux-artik
 	- build-artik
 	- boot-firmwares-artik533s
-	- Security Binaries for artik533s (Download from https://developer.artik.io/downloads/artik-533s/download)
+	- Security Binaries for artik530s 1G (artik533s) (Download from https://developer.artik.io/downloads/artik-533s/download)
 		- secureos.img: copy to ../boot-firmwares-artik533s
 		- artik533s_codesigner: copy to ../boot-firmwares-artik533s
 		- deb files: copy to ../ubuntu-build-service/prebuilt/armhf/artik533s
@@ -224,7 +224,7 @@ The output will be 'output/images/artik530/YYYYMMDD.HHMMSS/artik530_sdfuse_UNREL
 
 The output will be 'output/images/artik530s/YYYYMMDD.HHMMSS/artik530s_sdfuse_UNRELEASED_XXX.img'
 
--	artik533s
+-	artik530s 1G (artik533s)
 
 ```
 ./release.sh -c config/artik533s_ubuntu.cfg
@@ -258,7 +258,7 @@ The output will be 'output/images/artik533s/YYYYMMDD.HHMMSS/artik533s_sdfuse_UNR
 ./release.sh -c config/artik530s_ubuntu.cfg -m
 ```
 
--	artik533s
+-	artik530s 1G (artik533s)
 
 ```
 ./release.sh -c config/artik533s_ubuntu.cfg -m
@@ -273,7 +273,7 @@ The output will be 'output/images/artik533s/YYYYMMDD.HHMMSS/artik533s_sdfuse_UNR
 dpkg -i libsee-linux-trustware_0.1.6-0_armhf.deb security-b2b-artik530s_0.1.4-0_armhf.deb
 ```
 
--	artik533s
+-	artik530s 1G (artik533s)
 	- copy *.deb files on the target device. (Download from https://developer.artik.io/downloads/artik-533s/download)
 
 ```
@@ -367,7 +367,7 @@ cd build-artik
 ./release.sh -c config/artik530s_ubuntu.cfg --full-build --ubuntu
 ```
 
-- artik533s
+- artik530s 1G (artik533s)
 Please download security packages from https://developer.artik.io/downloads/artik-533s/download and copy them to ../ubuntu-build-service/prebuilt/armhf/artik533s/ directory.
 ```
 cd build-artik
@@ -406,7 +406,7 @@ cd build-artik
 ./release.sh -c config/artik530s_ubuntu.cfg --full-build --ubuntu --skip-ubuntu-build
 ```
 
-- artik533s
+- artik530s 1G (artik533s)
 
 ```
 cd build-artik

@@ -37,7 +37,7 @@ This 'build-artik' repository helps to create an ARTIK sd fuse image which can d
 ## 3. Build guide
 ### 3.1 Install packages
 ```
-sudo apt-get install kpartx u-boot-tools gcc-arm-linux-gnueabihf gcc-aarch64-linux-gnu device-tree-compiler
+sudo apt-get install kpartx u-boot-tools gcc-arm-linux-gnueabihf gcc-aarch64-linux-gnu device-tree-compiler android-tools-fsutils curl
 ```
 
 ### 3.2 Download BSP sources

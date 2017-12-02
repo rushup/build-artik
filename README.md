@@ -22,8 +22,6 @@ This 'build-artik' repository helps to create an ARTIK sd fuse image which can d
 	-	artik530_ubuntu.cfg: common.cfg + artik530 ubuntu specific configurations
 	-	artik530s_ubuntu.cfg: common.cfg + artik530s ubuntu specific configurations
 	-	artik533s_ubuntu.cfg: common.cfg + artik530s 1G (artik533s) ubuntu specific configurations
--	prebuilt : prebuilt binaries for artik5 and artik10
-	-	artik10: early stage bootloaders of artik10
 -	build_uboot.sh: u-boot build script
 -	build_kernel.sh: linux kernel build script
 -	build_fedora.sh: fedora build script(Packages + Rootfs tarball)

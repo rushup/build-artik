@@ -160,7 +160,7 @@ check_restrictive_pkg()
 		for l in $RESTRICTIVE_PKG_LIST
 		do
 			if [ ! -f $l ]; then
-				if [ $FULL_BUILD ]; then
+				if $FULL_BUILD; then
 					print_not_found $l
 					exit 1
 				else

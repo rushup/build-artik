@@ -103,10 +103,10 @@ Please ensure u-boot-artik and linux-artik directory on top of the build-artik.
 ```
 mkdir artik710
 cd artik710
-git clone https://github.com/SamsungARTIK/linux-artik.git -b A710_os_3.0.0
-git clone https://github.com/SamsungARTIK/u-boot-artik.git -b A710_os_3.0.0
-git clone https://github.com/SamsungARTIK/build-artik.git -b A710_os_3.0.0
-git clone https://github.com/SamsungARTIK/boot-firmwares-artik710.git -b A710_os_3.0.0
+git clone https://github.com/SamsungARTIK/linux-artik.git -b A710_os_3.1.0
+git clone https://github.com/SamsungARTIK/u-boot-artik.git -b A710_os_3.1.0
+git clone https://github.com/SamsungARTIK/build-artik.git -b A710_os_3.1.0
+git clone https://github.com/SamsungARTIK/boot-firmwares-artik710.git -b A710_os_3.1.0
 cd build-artik
 ```
 
@@ -299,7 +299,7 @@ This will require long time to make a ubuntu rootfs. You'll require to install s
 ```
 mkdir artik710_full
 cd artik710_full
-repo init -u https://github.com/SamsungARTIK/manifest.git -b A710_os_3.0.0 -m artik710.xml
+repo init -u https://github.com/SamsungARTIK/manifest.git -b A710_os_3.1.0 -m artik710.xml
 repo sync
 ```
 

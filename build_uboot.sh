@@ -27,8 +27,8 @@ parse_options()
 
 build()
 {
-	make ARCH=arm distclean
-	make ARCH=arm distclean O=$UBOOT_DIR/output
+	#make ARCH=arm distclean
+	#make ARCH=arm distclean O=$UBOOT_DIR/output
 	make ARCH=arm $UBOOT_DEFCONFIG O=$UBOOT_DIR/output
 	make ARCH=arm EXTRAVERSION="-$BUILD_VERSION" ${UBOOT_BUILD_OPT} -j$JOBS O=$UBOOT_DIR/output
 }

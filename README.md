@@ -48,10 +48,10 @@ Please ensure u-boot-artik and linux-artik directory on top of the build-artik.
 ```
 mkdir kitra710c
 cd kitra710c
-git clone https://github.com/rushup/Kitra710C-kernel.git -b master --single-branch
-git clone https://github.com/SamsungARTIK/u-boot-artik.git -b A710_os_3.0.0
-git clone https://github.com/rushup/build-artik.git -b A710_os_3.0.0
-git clone https://github.com/SamsungARTIK/boot-firmwares-artik710.git -b A710_os_3.0.0
+git clone https://github.com/rushup/rushup-linux-artik.git -b Kitra710C-os3.1-v0.4
+git clone https://github.com/rushup/rushup-u-boot-artik.git -b Kitra710C-os3.1-v0.4
+git clone https://github.com/rushup/build-artik.git -b A710_os_3.1.0
+git clone https://github.com/SamsungARTIK/boot-firmwares-artik710.git -b A710_os_3.1.0
 cd build-artik
 ```
 
@@ -81,42 +81,4 @@ The output will be 'output/images/artik710/YYYYMMDD.HHMMSS/artik710_sdfuse_UNREL
 
 Please refer https://developer.artik.io/documentation/updating-artik-image.html
 
----
-
-### 5. Full build guide
-
-This will require long time to make a ubuntu rootfs. You'll require to install sbuild/live buils system. Please refer "Environment set up for ubuntu package build" and "Environment set up for ubuntu rootfs build" from the [ubuntu-build-service](https://github.com/SamsungARTIK/ubuntu-build-service).
-
-#### 5.1. Clone whole source tree
-
-- artik710
-
-```
-mkdir artik710_full
-cd artik710_full
-repo init -u https://github.com/SamsungARTIK/manifest.git -b A710_os_3.0.0 -m artik710.xml
-repo sync
-```
-
-
-#### 5.2. Build with --full-build option
-
-- artik710
-
-```
-cd build-artik
-./release.sh -c config/artik710_ubuntu.cfg --full-build --ubuntu
-```
-
-
-#### 5.3. Build with --full-build and --skip-ubuntu-build option
-
-To skip building artik ubuntu packages such as bluez, wpa_supplicant, you can use --skip-ubuntu-build option along with --full-build. It will not build and get the packages from artik repository.
-
-- artik710
-
-```
-cd build-artik
-./release.sh -c config/artik710_ubuntu.cfg --full-build --ubuntu --skip-ubuntu-build
-```
 

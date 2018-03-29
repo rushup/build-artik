@@ -33,12 +33,9 @@ This 'build-artik' repository helps to create an ARTIK sd fuse image which can d
 ---
 ## 3. Build guide
 ### 3.1 Install packages
-
 ```
 sudo apt-get install kpartx u-boot-tools gcc-arm-linux-gnueabihf gcc-aarch64-linux-gnu device-tree-compiler
 ```
-
-### 3.2 Download BSP sources
 
 #### 3.2.1. clone the sources through git
 
@@ -58,21 +55,6 @@ git clone https://github.com/SamsungARTIK/boot-firmwares-artik710.git -b A710_os
 cd build-artik
 ```
 
-- KITRA530
-	- u-boot-artik
-	- linux-artik
-	- build-artik
-	- boot-firmwares-artik530
-
-```
-mkdir kitra530
-cd kitra530
-git clone https://github.com/rushup/Kitra530-kernel.git -b master --single-branch
-git clone https://github.com/SamsungARTIK/u-boot-artik.git -b A530_os_3.0.0
-git clone https://github.com/rushup/build-artik.git -b A530_os_3.0.0
-git clone https://github.com/SamsungARTIK/boot-firmwares-artik530.git -b A530_os_3.0.0
-cd build-artik
-```
 
 ### 3.3 Generate a sd fuse image(for eMMC recovery from sd card)
 
@@ -84,13 +66,7 @@ cd build-artik
 
 The output will be 'output/images/artik710/YYYYMMDD.HHMMSS/artik710_sdfuse_UNRELEASED_XXX.img'
 
--	kitra530
 
-```
-./release.sh -c config/kitra530_ubuntu.cfg
-```
-
-The output will be 'output/images/artik530/YYYYMMDD.HHMMSS/artik530_sdfuse_UNRELEASED_XXX.img'
 
 ### 3.4 Generate a sd bootable image(for SD Card Booting)
 
@@ -100,15 +76,47 @@ The output will be 'output/images/artik530/YYYYMMDD.HHMMSS/artik530_sdfuse_UNREL
 ./release.sh -c config/kitra710C_ubuntu.cfg -m
 ```
 
--	kitra530
-
-```
-./release.sh -c config/kitra530_ubuntu.cfg -m
-```
-
----
 
 ### 4. Install guide
 
 Please refer https://developer.artik.io/documentation/updating-artik-image.html
+
+---
+
+### 5. Full build guide
+
+This will require long time to make a ubuntu rootfs. You'll require to install sbuild/live buils system. Please refer "Environment set up for ubuntu package build" and "Environment set up for ubuntu rootfs build" from the [ubuntu-build-service](https://github.com/SamsungARTIK/ubuntu-build-service).
+
+#### 5.1. Clone whole source tree
+
+- artik710
+
+```
+mkdir artik710_full
+cd artik710_full
+repo init -u https://github.com/SamsungARTIK/manifest.git -b A710_os_3.0.0 -m artik710.xml
+repo sync
+```
+
+
+#### 5.2. Build with --full-build option
+
+- artik710
+
+```
+cd build-artik
+./release.sh -c config/artik710_ubuntu.cfg --full-build --ubuntu
+```
+
+
+#### 5.3. Build with --full-build and --skip-ubuntu-build option
+
+To skip building artik ubuntu packages such as bluez, wpa_supplicant, you can use --skip-ubuntu-build option along with --full-build. It will not build and get the packages from artik repository.
+
+- artik710
+
+```
+cd build-artik
+./release.sh -c config/artik710_ubuntu.cfg --full-build --ubuntu --skip-ubuntu-build
+```
 
